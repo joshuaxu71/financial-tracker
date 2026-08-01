@@ -34,24 +34,32 @@ Inside the Portfolio workbook, I have sheets for equities, bonds, and cash-like 
 # Problems
 
 1. Multi-currency Financial Tracker and Budgeting
-    1. Managing IDR and JPY funds are difficult, especially since I set my monthly budgets using JPY and can still spend IDR because of payment method restrictions
+    1. Managing IDR and JPY funds is difficult, especially since monthly budgets are set in JPY but spending can happen in IDR due to payment method restrictions
 2. Manual Intervention for Updating Wealth
-    1. Portfolio needs to be updated periodically because values change (gold price, bond evaluation, stock prices, forex exchange rate, etc)
-        1. I don’t think there’s a solution for this because getting those tickers requires a paid license. Most we can do is update manually
+    1. Portfolio needs to be updated periodically because values change (gold price, bond valuation, stock prices, forex exchange rate, etc)
 3. App Experience is Clunky
-    1. Adding expenses in most apps can be tiring because you need to add them one by one, even with voice input
+    1. Adding expenses in most apps is tiring because each item must be entered one at a time — even with voice input, entering 13 grocery items individually is enough friction to stop using the app
 4. Budgeting Flexibility
-    1. Since my day-to-day living expenses are separate from the Budget workbooks, conventional budgeting methods where I need to set budget for my food, transportation, etc separately does not fit my criteria because I’d like a more flexible budget that spans across multiple categories
+    1. Day-to-day living expenses are tracked separately from the Budget workbooks, so conventional budgeting (a fixed budget per category like food, transportation, etc.) doesn't fit — a budget needs to be able to span multiple categories flexibly
 
 # Requirements
 
 1. Multi-currency Financial Tracker and Budgeting
-    1. I think this can be resolved by separating the actual financial tracker and the budgeting. The financial tracker part records how much money is actually earned and spent. The budgeting part can be in one currency. If we do this, here will be a difference in the money spent and the budget remaining because there’s currency exchange, but it can be reconciled in the future since this budget does not represent real money.
+    1. **Decision:** separate the financial tracker from the budgeting. The tracker records actual money earned/spent in its real currency. The budget lives in a single reference currency. This creates a reconciliation gap from FX movement, but since the budget isn't real money, that gap can be reconciled periodically rather than in real time.
+    2. **Alternative considered:** track everything in one currency using daily FX rates. Rejected — adds constant noise from rate fluctuations and doesn't reflect how budgets are actually allocated.
 2. Manual Intervention for Updating Wealth
-    1. From my research, getting new values from tickers is impossible unless we scrape sites or subscribe to a license, which is illegal or not worth it. I think this still needs to stay as manual work. However, for expenses, maybe we can integrate with apps like splitwise, spliiit, or maybe official banking apps like BCA or OCBC
+    1. **Decision:** portfolio valuation (stocks, bonds, gold, forex) stays manual — live ticker data requires a paid license or scraping, neither of which is worth pursuing for personal use.
+    2. **Decision:** expense capture can eventually integrate with tools like Splitwise/Spliiit or bank apps (BCA, OCBC), but this depends on each provider's API/OAuth access and is deferred past v1.
+    3. **Alternative considered:** bank statement CSV import as a lower-effort middle ground before live API integration.
 3. App Experience is Clunky
-    1. Using apps are slow when inputting a lot of things, for example, going to a grocery store and purchasing 13 items. If the app requires you to add something, input name and price, click add, rinse and repeat 13 times, I will stop using the app. It needs the following features:
-        1. A spreadsheet-like editing method so I can input price > down > input price > down and so on
-        2. Scan a receipt and automatically input them
+    1. **Decision (v1):** spreadsheet-style rapid entry — input price, move to next row, input price, and so on — is core to the MVP.
+    2. **Decision (deferred):** receipt scanning/OCR is a Phase 2 feature, not required for launch. The data model for expense entries should stay OCR-compatible so it can be added later without rework.
+    3. **Alternative considered for OCR when built:** on-device OCR (e.g. native Apple/Google text recognition — free, less accurate) vs. a paid vision API (more accurate, per-call cost) — to be decided when Phase 2 starts.
 4. Budgeting Flexibility
-    1. Ability to set budgets based on a category, groups of categories, month in general, etc
+    1. **Decision:** a budget can be scoped to a single category, a group of categories, or overall monthly spend — budgets are a separate, configurable entity rather than a fixed field on each category.
+
+# Non-goals / Deferred
+
+- Automated market data feeds for portfolio valuation (confirmed not viable — paid license or scraping required)
+- Receipt scanning / OCR (Phase 2)
+- Third-party expense integrations — Splitwise, Spliiit, bank apps (Phase 2+, dependent on provider API access)
