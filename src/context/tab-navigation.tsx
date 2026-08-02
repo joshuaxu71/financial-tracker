@@ -11,8 +11,7 @@ import PagerView from "react-native-pager-view";
 
 export const TRACK_INDEX = 0;
 export const DASHBOARD_INDEX = 1;
-export const BUDGET_INDEX = 2;
-export const FINANCE_INDEX = 3;
+export const FINANCE_INDEX = 2;
 export const HOME_INDEX = TRACK_INDEX;
 
 type TabNavigationContextType = {

@@ -1,15 +1,13 @@
-import { ChartPie, Landmark, NotebookPen, Wallet } from "lucide-react-native";
+import { ChartPie, Landmark, NotebookPen } from "lucide-react-native";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import PagerView from "react-native-pager-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import BudgetScreen from "@/app/budget";
 import FinanceScreen from "@/app/finance";
 import HistoryScreen from "@/app/history";
 import TrackScreen from "@/app/index";
 import { ThemedText } from "@/components/themed-text";
 import {
-   BUDGET_INDEX,
    DASHBOARD_INDEX,
    FINANCE_INDEX,
    HOME_INDEX,
@@ -18,7 +16,7 @@ import {
 } from "@/context/tab-navigation";
 import { useTheme } from "@/hooks/use-theme";
 
-const TAB_LABELS = ["Track", "Dashboard", "Budget", "Finance"];
+const TAB_LABELS = ["Track", "Dashboard", "Finance"];
 
 export default function AppTabs() {
    const theme = useTheme();
@@ -27,17 +25,11 @@ export default function AppTabs() {
    const { height: screenHeight } = useWindowDimensions();
    const isIos = Platform.OS === "ios";
 
-   const TAB_ICONS = [NotebookPen, ChartPie, Wallet, Landmark];
-   const TAB_SELECTED_COLORS = [
-      theme.trackFocused,
-      theme.dashboardFocused,
-      theme.budgetFocused,
-      theme.financeFocused,
-   ];
+   const TAB_ICONS = [NotebookPen, ChartPie, Landmark];
+   const TAB_SELECTED_COLORS = [theme.trackFocused, theme.dashboardFocused, theme.financeFocused];
    const ICON_SELECTED_COLORS = [
       theme.trackNavigationColor,
       theme.dashboardNavigationColor,
-      theme.budgetNavigationColor,
       theme.financeNavigationColor,
    ];
 
@@ -67,9 +59,6 @@ export default function AppTabs() {
             </View>
             <View key={DASHBOARD_INDEX} style={styles.page}>
                <HistoryScreen />
-            </View>
-            <View key={BUDGET_INDEX} style={styles.page}>
-               <BudgetScreen />
             </View>
             <View key={FINANCE_INDEX} style={styles.page}>
                <FinanceScreen />
