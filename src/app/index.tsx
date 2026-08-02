@@ -202,6 +202,8 @@ export default function TrackScreen() {
          />
          <CategoriesModal
             visible={showCategories}
+            year={viewYear}
+            month={viewMonth}
             onDismiss={() => setShowCategories(false)}
             onChanged={loadCategories}
          />

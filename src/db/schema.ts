@@ -95,4 +95,11 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
          await db.execAsync("PRAGMA user_version = 1");
       });
    }
+
+   if (v < 2) {
+      await db.withTransactionAsync(async () => {
+         await db.execAsync("ALTER TABLE categories ADD COLUMN budget REAL");
+         await db.execAsync("PRAGMA user_version = 2");
+      });
+   }
 }

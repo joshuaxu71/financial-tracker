@@ -2,6 +2,7 @@ import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useMemo, useState } from "react";
 import {
    Alert,
+   type DimensionValue,
    FlatList,
    Modal,
    StyleSheet,
@@ -12,39 +13,43 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
-import { type Category, resolveCategoryColor } from "@/constants/categories";
+import { resolveCategoryColor } from "@/constants/categories";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import {
    type CategoryRow,
    deleteCategory,
    getAllCategories,
+   getCategorySpendingByMonth,
    getCategoryUsage,
    insertCategory,
    updateCategory,
 } from "@/db/categories";
 import { useTheme } from "@/hooks/use-theme";
+import { formatAmount } from "@/utils/currency";
 
 type Props = {
    visible: boolean;
+   year: number;
+   month: number;
    onDismiss: () => void;
    onChanged: () => void;
 };
 
 type TreeNode = {
-   category: Category;
+   category: CategoryRow;
    depth: number;
    children: TreeNode[];
 };
 
-function buildTree(categories: readonly Category[]): TreeNode[] {
-   const byParent = new Map<number | null, Category[]>();
+function buildTree(categories: readonly CategoryRow[]): TreeNode[] {
+   const byParent = new Map<number | null, CategoryRow[]>();
    for (const c of categories) {
       const list = byParent.get(c.parent_id) ?? [];
       list.push(c);
       byParent.set(c.parent_id, list);
    }
-   function build(cats: Category[], depth: number): TreeNode[] {
+   function build(cats: CategoryRow[], depth: number): TreeNode[] {
       return cats.map((c) => ({
          category: c,
          depth,
@@ -54,12 +59,32 @@ function buildTree(categories: readonly Category[]): TreeNode[] {
    return build(byParent.get(null) ?? [], 0);
 }
 
-export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
+function budgetViolation(categories: readonly CategoryRow[]): string | null {
+   const hasChildren = (id: number) => categories.some((c) => c.parent_id === id);
+   for (const group of categories) {
+      if (group.budget == null) continue;
+      const leaves = categories.filter((c) => c.parent_id === group.id && !hasChildren(c.id));
+      if (leaves.length === 0) continue;
+      const setLeaves = leaves.filter((l) => l.budget != null);
+      const sum = setLeaves.reduce((s, l) => s + (l.budget ?? 0), 0);
+      if (setLeaves.length === leaves.length) {
+         if (Math.abs(sum - group.budget) > 0.009) {
+            return `"${group.name}" has a budget of ¥${group.budget}, but its sub-categories total ¥${sum}. When all are set they must match exactly.`;
+         }
+      } else if (sum > group.budget) {
+         return `"${group.name}" has a budget of ¥${group.budget}, but its set sub-categories already total ¥${sum}. Unset ones share the remainder.`;
+      }
+   }
+   return null;
+}
+
+export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: Props) {
    const db = useSQLiteContext();
    const theme = useTheme();
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [usage, setUsage] = useState<Map<number, number>>(new Map());
+   const [spending, setSpending] = useState<Map<number, number>>(new Map());
    const [expanded, setExpanded] = useState<Set<number>>(new Set());
    const [editor, setEditor] = useState<{
       mode: "new" | "edit";
@@ -67,6 +92,7 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
       name: string;
       parentId: number | null;
       color: string | null;
+      budget: string;
    } | null>(null);
    const [showParentPicker, setShowParentPicker] = useState(false);
    const [showReassign, setShowReassign] = useState(false);
@@ -75,8 +101,9 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
       const cats = await getAllCategories(db);
       setCategories(cats);
       setUsage(await getCategoryUsage(db));
+      setSpending(await getCategorySpendingByMonth(db, year, month));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
-   }, [db]);
+   }, [db, year, month]);
 
    const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -107,16 +134,17 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
    }
 
    function openNew() {
-      setEditor({ mode: "new", id: null, name: "", parentId: null, color: null });
+      setEditor({ mode: "new", id: null, name: "", parentId: null, color: null, budget: "" });
    }
 
-   function openEdit(category: Category) {
+   function openEdit(category: CategoryRow) {
       setEditor({
          mode: "edit",
          id: category.id,
          name: category.name,
          parentId: category.parent_id,
          color: category.color,
+         budget: category.budget != null ? String(category.budget) : "",
       });
    }
 
@@ -130,18 +158,43 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
          Alert.alert("Color required", "Top-level categories need a color.");
          return;
       }
+      const budget = editor.budget.trim() === "" ? null : parseFloat(editor.budget);
+      if (budget !== null && (isNaN(budget) || budget < 0)) {
+         Alert.alert("Invalid budget", "Enter a positive number, or leave it empty for no budget.");
+         return;
+      }
+
+      const prospective = categories.map((c) =>
+         c.id === editor.id
+            ? {
+                 ...c,
+                 name: editor.name.trim(),
+                 parent_id: editor.parentId,
+                 color: editor.color,
+                 budget,
+              }
+            : c,
+      );
+      const violation = budgetViolation(prospective);
+      if (violation) {
+         Alert.alert("Budget mismatch", violation);
+         return;
+      }
+
       try {
          if (editor.mode === "new") {
             await insertCategory(db, {
                name: editor.name,
                parent_id: editor.parentId,
                color: editor.color,
+               budget,
             });
          } else if (editor.id != null) {
             await updateCategory(db, editor.id, {
                name: editor.name,
                parent_id: editor.parentId,
                color: editor.color,
+               budget,
             });
          }
          setEditor(null);
@@ -194,12 +247,22 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
       ? (categories.find((c) => c.id === editor.parentId)?.name ?? "None (top level)")
       : "";
 
+   function nodeSpent(node: TreeNode): number {
+      let total = spending.get(node.category.id) ?? 0;
+      for (const child of node.children) total += nodeSpent(child);
+      return total;
+   }
+
    function renderNode(node: TreeNode) {
       const isExpanded = expanded.has(node.category.id);
       const hasChildren = node.children.length > 0;
       const dotColor = resolveCategoryColor(categories, node.category.id);
       const count = usage.get(node.category.id) ?? 0;
       const isTopLevel = node.category.parent_id === null;
+      const budget = node.category.budget;
+      const spent = nodeSpent(node);
+      const pct = budget != null && budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+      const isOver = budget != null && budget > 0 && spent > budget;
 
       return (
          <View key={node.category.id}>
@@ -210,21 +273,52 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
                onLongPress={() => openEdit(node.category)}
             >
                <View style={[styles.dot, { backgroundColor: dotColor }]} />
-               <ThemedText style={styles.rowName} numberOfLines={1}>
-                  {node.category.name}
-               </ThemedText>
-               {count > 0 && (
-                  <ThemedText themeColor="textSecondary" style={styles.count}>
-                     {count}
-                  </ThemedText>
-               )}
-               {hasChildren ? (
-                  <ThemedText themeColor="textSecondary">{isExpanded ? "▾" : "▸"}</ThemedText>
-               ) : isTopLevel ? null : (
-                  <ThemedText themeColor="textSecondary" style={styles.editHint}>
-                     edit
-                  </ThemedText>
-               )}
+               <View style={styles.rowMain}>
+                  <View style={styles.rowTop}>
+                     <ThemedText style={styles.rowName} numberOfLines={1}>
+                        {node.category.name}
+                     </ThemedText>
+                     {count > 0 && (
+                        <ThemedText themeColor="textSecondary" style={styles.count}>
+                           {count}
+                        </ThemedText>
+                     )}
+                     {hasChildren ? (
+                        <ThemedText themeColor="textSecondary">{isExpanded ? "▾" : "▸"}</ThemedText>
+                     ) : isTopLevel ? null : (
+                        <ThemedText themeColor="textSecondary" style={styles.editHint}>
+                           edit
+                        </ThemedText>
+                     )}
+                  </View>
+                  {budget != null && (
+                     <View style={styles.rowBudget}>
+                        <ThemedText
+                           type="small"
+                           themeColor={isOver ? "text" : "textSecondary"}
+                           style={styles.budgetText}
+                        >
+                           {formatAmount(spent)} / {formatAmount(budget)}
+                        </ThemedText>
+                        <View
+                           style={[
+                              styles.budgetTrack,
+                              { backgroundColor: theme.backgroundSelected },
+                           ]}
+                        >
+                           <View
+                              style={[
+                                 styles.budgetFill,
+                                 {
+                                    width: `${pct.toFixed(1)}%` as DimensionValue,
+                                    backgroundColor: isOver ? "#ef4444" : dotColor,
+                                 },
+                              ]}
+                           />
+                        </View>
+                     </View>
+                  )}
+               </View>
             </TouchableOpacity>
             {hasChildren && isExpanded && node.children.map((child) => renderNode(child))}
          </View>
@@ -334,6 +428,28 @@ export function CategoriesModal({ visible, onDismiss, onChanged }: Props) {
                            />
                         ))}
                      </View>
+
+                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                        Monthly budget
+                     </ThemedText>
+                     <TextInput
+                        value={editor.budget}
+                        onChangeText={(v) => setEditor({ ...editor, budget: v })}
+                        placeholder={
+                           editor.parentId === null ? "e.g. 150000 (¥)" : "Empty = no budget"
+                        }
+                        placeholderTextColor={theme.textSecondary}
+                        keyboardType="decimal-pad"
+                        style={[
+                           styles.input,
+                           { color: theme.text, backgroundColor: theme.backgroundSelected },
+                        ]}
+                     />
+                     <ThemedText themeColor="textSecondary" style={styles.budgetHint}>
+                        {editor.parentId === null
+                           ? "Group budget. If all sub-categories set one, they must equal this."
+                           : "Sub-category budget. Unset ones share the group's remainder."}
+                     </ThemedText>
 
                      <View style={styles.sheetActions}>
                         {editor.mode === "edit" && (
@@ -496,6 +612,23 @@ const styles = StyleSheet.create({
       paddingRight: Spacing.four,
       paddingVertical: Spacing.one,
    },
+   rowMain: { flex: 1, gap: Spacing.half, minWidth: 0 },
+   rowTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.two,
+   },
+   rowBudget: { gap: Spacing.half, paddingRight: Spacing.three },
+   budgetText: { fontSize: 11 },
+   budgetTrack: {
+      height: 4,
+      borderRadius: 2,
+      overflow: "hidden",
+   },
+   budgetFill: {
+      height: "100%",
+      borderRadius: 2,
+   },
    dot: {
       flexShrink: 0,
       width: 10,
@@ -519,6 +652,10 @@ const styles = StyleSheet.create({
    },
    sheetTitle: { marginBottom: Spacing.one },
    sheetSubtitle: { marginBottom: Spacing.two },
+   budgetHint: {
+      marginBottom: Spacing.one,
+      fontSize: 11,
+   },
    label: {
       marginTop: Spacing.two,
       fontSize: 12,
