@@ -1,3 +1,4 @@
+import { useFonts } from "expo-font";
 import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { SQLiteProvider } from "expo-sqlite";
@@ -13,6 +14,16 @@ SplashScreen.preventAutoHideAsync();
 
 export default function TabLayout() {
    const colorScheme = useColorScheme();
+   const [fontsLoaded] = useFonts({
+      "Urbanist-Medium": require("../../assets/fonts/Urbanist-Medium.ttf"),
+      "Urbanist-SemiBold": require("../../assets/fonts/Urbanist-SemiBold.ttf"),
+      "Urbanist-Bold": require("../../assets/fonts/Urbanist-Bold.ttf"),
+   });
+
+   if (!fontsLoaded) {
+      return null;
+   }
+
    return (
       <GestureHandlerRootView style={{ flex: 1 }}>
          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>

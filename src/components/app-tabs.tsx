@@ -102,8 +102,8 @@ const styles = StyleSheet.create({
       padding: 8,
    },
    headerTitle: {
+      fontFamily: "Urbanist-Medium",
       fontSize: 20,
-      fontWeight: 600,
    },
    pager: { flex: 1 },
    page: { flex: 1 },

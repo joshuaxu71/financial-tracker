@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
       paddingVertical: Spacing.two,
       borderRadius: Spacing.three,
    },
-   selectedText: { fontWeight: "700" },
+   selectedText: { fontFamily: "Urbanist-Bold" },
    picker: {
       width: 280,
       maxHeight: 420,

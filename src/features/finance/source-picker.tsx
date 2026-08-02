@@ -87,5 +87,5 @@ const styles = StyleSheet.create({
    },
    label: { flex: 1, fontSize: 15 },
    currency: { fontSize: 12 },
-   selectedText: { fontWeight: "700" },
+   selectedText: { fontFamily: "Urbanist-Bold" },
 });

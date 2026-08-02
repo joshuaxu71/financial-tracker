@@ -151,5 +151,5 @@ const styles = StyleSheet.create({
       borderRadius: 4,
    },
    rowLabel: { flex: 1 },
-   selectedLabel: { fontWeight: "600" },
+   selectedLabel: { fontFamily: "Urbanist-SemiBold" },
 });
