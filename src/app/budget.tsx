@@ -135,6 +135,10 @@ export default function BudgetScreen() {
       <ThemedView style={styles.container}>
          <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle">Budget</ThemedText>
+               </View>
+
                <ThemedView type="backgroundElement" style={styles.summaryCard}>
                   <ThemedText type="small" themeColor="textSecondary">
                      {monthLabel}
@@ -175,6 +179,11 @@ const styles = StyleSheet.create({
       paddingTop: Spacing.three,
       paddingBottom: Spacing.five,
       paddingHorizontal: Spacing.four,
+   },
+   header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
    },
    summaryCard: {
       alignItems: "center",

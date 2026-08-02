@@ -211,6 +211,10 @@ export default function DashboardScreen() {
       <ThemedView style={styles.container}>
          <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle">Dashboard</ThemedText>
+               </View>
+
                <View style={styles.monthNav}>
                   <TouchableOpacity onPress={navigatePrev} style={styles.arrowButton}>
                      <ThemedText themeColor="textSecondary">←</ThemedText>
@@ -313,6 +317,11 @@ const styles = StyleSheet.create({
       paddingTop: Spacing.three,
       paddingBottom: Spacing.five,
       paddingHorizontal: Spacing.four,
+   },
+   header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
    },
    monthNav: {
       flexDirection: "row",

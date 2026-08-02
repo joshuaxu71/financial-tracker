@@ -121,6 +121,7 @@ export default function FinanceScreen() {
          <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                <View style={styles.header}>
+                  <ThemedText type="subtitle">Finance</ThemedText>
                   <View style={styles.headerActions}>
                      <TouchableOpacity
                         style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
@@ -130,11 +131,13 @@ export default function FinanceScreen() {
                         <ThemedText type="smallBold">↻</ThemedText>
                      </TouchableOpacity>
                      <TouchableOpacity
-                        style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
+                        style={[styles.addSourceButton, { backgroundColor: theme.text }]}
                         onPress={() => setShowSources(true)}
-                        accessibilityLabel="Manage sources"
+                        accessibilityLabel="Add or manage sources"
                      >
-                        <ThemedText type="smallBold">⚙</ThemedText>
+                        <ThemedText type="smallBold" style={{ color: theme.background }}>
+                           + Add source
+                        </ThemedText>
                      </TouchableOpacity>
                   </View>
                </View>
@@ -150,9 +153,11 @@ export default function FinanceScreen() {
                </ThemedView>
 
                {sources.length === 0 ? (
-                  <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-                     No sources yet. Add one to start tracking balances.
-                  </ThemedText>
+                  <TouchableOpacity onPress={() => setShowSources(true)}>
+                     <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                        No sources yet. Tap to add one.
+                     </ThemedText>
+                  </TouchableOpacity>
                ) : (
                   sources.map((s) => {
                      const bal = balance.get(s.id) ?? 0;
@@ -296,7 +301,7 @@ const styles = StyleSheet.create({
    },
    header: {
       flexDirection: "row",
-      justifyContent: "flex-end",
+      justifyContent: "space-between",
       alignItems: "center",
    },
    headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.two },
@@ -306,6 +311,13 @@ const styles = StyleSheet.create({
       width: 32,
       height: 32,
       borderRadius: 16,
+   },
+   addSourceButton: {
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.one,
+      borderRadius: 100,
    },
    netWorthCard: {
       alignItems: "center",
