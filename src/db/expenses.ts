@@ -6,6 +6,7 @@ export type Expense = {
    id: string;
    date: string;
    category_id: number;
+   source_id: number;
    amount: number;
    description: string;
    created_at: string;
@@ -15,6 +16,7 @@ export type Expense = {
 export type NewExpense = {
    date: string;
    category_id: number;
+   source_id: number;
    amount: number;
    description: string;
    sort_order?: number;
@@ -25,10 +27,11 @@ export async function insertExpenses(db: SQLiteDatabase, expenses: NewExpense[])
    await db.withTransactionAsync(async () => {
       for (const [i, expense] of expenses.entries()) {
          await db.runAsync(
-            "INSERT INTO expenses (id, date, category_id, amount, description, created_at, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO expenses (id, date, category_id, source_id, amount, description, created_at, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             makeId(),
             expense.date,
             expense.category_id,
+            expense.source_id,
             expense.amount,
             expense.description,
             now,

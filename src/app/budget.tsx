@@ -14,7 +14,9 @@ import {
    getBudgetHistory,
 } from "@/db/categories";
 import { type Expense, getAllExpenses } from "@/db/expenses";
-import { budgetStateForMonth } from "@/features/budget/budget-calc";
+import { getRates } from "@/db/rates";
+import { getAllSources } from "@/db/sources";
+import { budgetStateForMonth, convertExpensesToJpy } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 import { currentYearMonth, formatMonthYear } from "@/utils/date";
@@ -53,13 +55,15 @@ export default function BudgetScreen() {
    const [isLoading, setIsLoading] = useState(true);
 
    const load = useCallback(async () => {
-      const [c, e, h] = await Promise.all([
+      const [c, e, h, s, r] = await Promise.all([
          getAllCategories(db),
          getAllExpenses(db),
          getBudgetHistory(db),
+         getAllSources(db),
+         getRates(db),
       ]);
       setCategories(c);
-      setExpenses(e);
+      setExpenses(convertExpensesToJpy(e, s, r));
       setHistory(h);
       setIsLoading(false);
    }, [db]);

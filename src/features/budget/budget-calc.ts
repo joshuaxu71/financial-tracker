@@ -1,5 +1,24 @@
 import { type BudgetHistoryRow, type CategoryRow } from "@/db/categories";
 import { type Expense } from "@/db/expenses";
+import { convertToJpy } from "@/db/rates";
+import { type SourceRow } from "@/db/sources";
+
+/**
+ * Returns expenses with their amounts converted to JPY using each one's
+ * source currency and the given rates. Foreign-currency sources fall back
+ * to a 1:1 rate when no rate is cached.
+ */
+export function convertExpensesToJpy(
+   expenses: readonly Expense[],
+   sources: readonly SourceRow[],
+   rates: ReadonlyMap<string, number>,
+): Expense[] {
+   const currency = new Map(sources.map((s) => [s.id, s.currency]));
+   return expenses.map((e) => ({
+      ...e,
+      amount: convertToJpy(e.amount, currency.get(e.source_id) ?? "JPY", rates),
+   }));
+}
 
 function monthKey(year: number, month: number): number {
    return year * 12 + (month - 1);

@@ -28,7 +28,13 @@ import {
    updateCategory,
 } from "@/db/categories";
 import { type Expense, getAllExpenses } from "@/db/expenses";
-import { type BudgetState, budgetStateForMonth } from "@/features/budget/budget-calc";
+import { getRates } from "@/db/rates";
+import { getAllSources } from "@/db/sources";
+import {
+   type BudgetState,
+   budgetStateForMonth,
+   convertExpensesToJpy,
+} from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 
@@ -106,8 +112,13 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const cats = await getAllCategories(db);
       setCategories(cats);
       setUsage(await getCategoryUsage(db));
-      setExpenses(await getAllExpenses(db));
       setHistory(await getBudgetHistory(db));
+      const [rawExpenses, s, r] = await Promise.all([
+         getAllExpenses(db),
+         getAllSources(db),
+         getRates(db),
+      ]);
+      setExpenses(convertExpensesToJpy(rawExpenses, s, r));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
    }, [db]);
 

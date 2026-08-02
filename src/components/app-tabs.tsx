@@ -24,6 +24,10 @@ export default function AppTabs() {
          <NativeTabs.Trigger name="budget">
             <NativeTabs.Trigger.Label>Budget</NativeTabs.Trigger.Label>
          </NativeTabs.Trigger>
+
+         <NativeTabs.Trigger name="finance">
+            <NativeTabs.Trigger.Label>Finance</NativeTabs.Trigger.Label>
+         </NativeTabs.Trigger>
       </NativeTabs>
    );
 }

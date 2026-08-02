@@ -1,12 +1,14 @@
 import { useCallback, useState } from "react";
 
 const DEFAULT_CATEGORY_ID = 2; // Food
+const DEFAULT_SOURCE_ID = 1; // Cash
 
 export type JournalEntryRow = {
    id: string;
    amount: string;
    description: string;
    category_id: number;
+   source_id: number;
 };
 
 export type ActiveEntryCell = {
@@ -23,8 +25,17 @@ function makeRowId() {
    return `jr-${rowIdCounter}`;
 }
 
-function makeEmptyRow(categoryId = DEFAULT_CATEGORY_ID): JournalEntryRow {
-   return { id: makeRowId(), amount: "", description: "", category_id: categoryId };
+function makeEmptyRow(
+   categoryId = DEFAULT_CATEGORY_ID,
+   sourceId = DEFAULT_SOURCE_ID,
+): JournalEntryRow {
+   return {
+      id: makeRowId(),
+      amount: "",
+      description: "",
+      category_id: categoryId,
+      source_id: sourceId,
+   };
 }
 
 function isRowEmpty(row: JournalEntryRow) {
@@ -34,7 +45,7 @@ function isRowEmpty(row: JournalEntryRow) {
 function withTrailingBlank(rows: JournalEntryRow[]): JournalEntryRow[] {
    const last = rows[rows.length - 1];
    if (!last || !isRowEmpty(last)) {
-      return [...rows, makeEmptyRow(last?.category_id)];
+      return [...rows, makeEmptyRow(last?.category_id, last?.source_id)];
    }
    return rows;
 }
@@ -42,6 +53,7 @@ function withTrailingBlank(rows: JournalEntryRow[]): JournalEntryRow[] {
 export function useJournalEntries() {
    const [rowsByDate, setRowsByDate] = useState<RowsMap>({});
    const [activeCell, setActiveCell] = useState<ActiveEntryCell>(null);
+   const [lastSourceId, setLastSourceId] = useState(DEFAULT_SOURCE_ID);
 
    const ensureDayRows = useCallback((date: string) => {
       setRowsByDate((prev) => {
@@ -54,7 +66,7 @@ export function useJournalEntries() {
       (
          date: string,
          rowId: string,
-         field: "amount" | "description" | "category_id",
+         field: "amount" | "description" | "category_id" | "source_id",
          value: string | number,
       ) => {
          setRowsByDate((prev) => {
@@ -62,7 +74,10 @@ export function useJournalEntries() {
             const updated = rows.map((r) => (r.id === rowId ? { ...r, [field]: value } : r));
             return {
                ...prev,
-               [date]: field === "category_id" ? updated : withTrailingBlank(updated),
+               [date]:
+                  field === "category_id" || field === "source_id"
+                     ? updated
+                     : withTrailingBlank(updated),
             };
          });
       },
@@ -115,6 +130,8 @@ export function useJournalEntries() {
       rowsByDate,
       activeCell,
       hasAnyPending,
+      lastSourceId,
+      setLastSourceId,
       ensureDayRows,
       updateRow,
       removeRow,

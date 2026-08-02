@@ -5,6 +5,8 @@ import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { ThemedText } from "@/components/themed-text";
 import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
+import { type SourceRow } from "@/db/sources";
+import { SourcePicker } from "@/features/finance/source-picker";
 import { useTheme } from "@/hooks/use-theme";
 
 import { InlineCategoryPicker } from "./inline-category-picker";
@@ -13,11 +15,13 @@ import type { JournalEntryRow as JournalEntryRowType } from "./use-journal-entri
 type Props = {
    row: JournalEntryRowType;
    categories: readonly Category[];
+   sources: readonly SourceRow[];
    amountInputRef: RefObject<TextInput | null>;
    descInputRef: RefObject<TextInput | null>;
    onAmountChange: (value: string) => void;
    onDescriptionChange: (value: string) => void;
    onCategoryChange: (categoryId: number) => void;
+   onSourceChange: (sourceId: number) => void;
    onAmountSubmit: () => void;
    onDescriptionSubmit: () => void;
    onDeleteRow: () => void;
@@ -28,11 +32,13 @@ type Props = {
 export function JournalEntryRow({
    row,
    categories,
+   sources,
    amountInputRef,
    descInputRef,
    onAmountChange,
    onDescriptionChange,
    onCategoryChange,
+   onSourceChange,
    onAmountSubmit,
    onDescriptionSubmit,
    onDeleteRow,
@@ -41,8 +47,11 @@ export function JournalEntryRow({
 }: Props) {
    const theme = useTheme();
    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+   const [showSourcePicker, setShowSourcePicker] = useState(false);
    const category = categories.find((c) => c.id === row.category_id);
    const dotColor = resolveCategoryColor(categories, row.category_id);
+   const source = sources.find((s) => s.id === row.source_id);
+   const sourceColor = source?.color ?? "#888888";
 
    function handleBackspace() {
       if (row.amount === "" && row.description === "") onDeleteRow();
@@ -80,6 +89,13 @@ export function JournalEntryRow({
             }}
          />
          <TouchableOpacity
+            style={styles.sourceButton}
+            onPress={() => setShowSourcePicker(true)}
+            accessibilityLabel={`Source ${source?.name ?? "?"}`}
+         >
+            <View style={[styles.sourceDot, { backgroundColor: sourceColor }]} />
+         </TouchableOpacity>
+         <TouchableOpacity
             style={styles.categoryButton}
             onPress={() => setShowCategoryPicker(true)}
          >
@@ -97,6 +113,13 @@ export function JournalEntryRow({
                setShowCategoryPicker(false);
             }}
             onDismiss={() => setShowCategoryPicker(false)}
+         />
+         <SourcePicker
+            visible={showSourcePicker}
+            sources={sources}
+            selectedSourceId={row.source_id}
+            onSelect={onSourceChange}
+            onDismiss={() => setShowSourcePicker(false)}
          />
       </View>
    );
@@ -124,7 +147,19 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.one,
-      maxWidth: 80,
+      maxWidth: 72,
+   },
+   sourceButton: {
+      justifyContent: "center",
+      alignItems: "center",
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+   },
+   sourceDot: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
    },
    dot: {
       flexShrink: 0,

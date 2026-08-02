@@ -17,6 +17,8 @@ import { ThemedView } from "@/components/themed-view";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import { type CategoryRow, getAllCategories } from "@/db/categories";
 import { type Expense, deleteExpense, getExpensesByMonth, insertExpenses } from "@/db/expenses";
+import { convertToJpy, getRates } from "@/db/rates";
+import { type SourceRow, getAllSources } from "@/db/sources";
 import { CategoriesModal } from "@/features/categories/categories-modal";
 import { CategoryFilter } from "@/features/journal/category-filter";
 import { JournalEntryRow } from "@/features/journal/journal-entry-row";
@@ -48,6 +50,8 @@ export default function TrackScreen() {
    const [viewMonth, setViewMonth] = useState(NOW_MONTH);
    const [expenses, setExpenses] = useState<Expense[]>([]);
    const [categories, setCategories] = useState<CategoryRow[]>([]);
+   const [sources, setSources] = useState<SourceRow[]>([]);
+   const [rates, setRates] = useState<Map<string, number>>(new Map());
    const [filterGroupId, setFilterGroupId] = useState<number | null>(null);
    const [showMonthPicker, setShowMonthPicker] = useState(false);
    const [showCategories, setShowCategories] = useState(false);
@@ -64,21 +68,25 @@ export default function TrackScreen() {
       focusCell,
       clearAll,
       getCommittedEntries,
+      setLastSourceId,
    } = useJournalEntries();
 
    const isCurrentMonth = viewYear === NOW_YEAR && viewMonth === NOW_MONTH;
 
-   function isUnderGroup(categoryId: number, groupId: number): boolean {
-      const byId = new Map(categories.map((c) => [c.id, c]));
-      let current = byId.get(categoryId);
-      const seen = new Set<number>();
-      while (current && !seen.has(current.id)) {
-         seen.add(current.id);
-         if (current.parent_id === groupId) return true;
-         current = current.parent_id == null ? undefined : byId.get(current.parent_id);
-      }
-      return false;
-   }
+   const isUnderGroup = useCallback(
+      (categoryId: number, groupId: number): boolean => {
+         const byId = new Map(categories.map((c) => [c.id, c]));
+         let current = byId.get(categoryId);
+         const seen = new Set<number>();
+         while (current && !seen.has(current.id)) {
+            seen.add(current.id);
+            if (current.parent_id === groupId) return true;
+            current = current.parent_id == null ? undefined : byId.get(current.parent_id);
+         }
+         return false;
+      },
+      [categories],
+   );
 
    const rowRefsMap = useRef(new Map<string, RowRefs>());
 
@@ -98,6 +106,11 @@ export default function TrackScreen() {
       setCategories(await getAllCategories(db));
    }, [db]);
 
+   const loadSources = useCallback(async () => {
+      setSources(await getAllSources(db));
+      setRates(await getRates(db));
+   }, [db]);
+
    useEffect(() => {
       loadExpenses();
    }, [loadExpenses]);
@@ -105,6 +118,10 @@ export default function TrackScreen() {
    useEffect(() => {
       loadCategories();
    }, [loadCategories]);
+
+   useEffect(() => {
+      loadSources();
+   }, [loadSources]);
 
    useEffect(() => {
       if (isCurrentMonth) ensureDayRows(TODAY);
@@ -121,6 +138,10 @@ export default function TrackScreen() {
       const filtered = filterGroupId
          ? expenses.filter((e) => isUnderGroup(e.category_id, filterGroupId))
          : expenses;
+
+      const sourceCurrency = new Map(sources.map((s) => [s.id, s.currency]));
+      const jpy = (e: Expense) =>
+         convertToJpy(e.amount, sourceCurrency.get(e.source_id) ?? "JPY", rates);
 
       const daySet = new Set<string>();
       if (isCurrentMonth) daySet.add(TODAY);
@@ -139,10 +160,20 @@ export default function TrackScreen() {
                date,
                title: formatDayHeader(date),
                data,
-               dailyTotal: data.reduce((sum, e) => sum + e.amount, 0),
+               dailyTotal: data.reduce((sum, e) => sum + jpy(e), 0),
             };
          });
-   }, [expenses, filterGroupId, rowsByDate, isCurrentMonth, viewYear, viewMonth, categories]);
+   }, [
+      expenses,
+      filterGroupId,
+      rowsByDate,
+      isCurrentMonth,
+      viewYear,
+      viewMonth,
+      isUnderGroup,
+      sources,
+      rates,
+   ]);
 
    async function handleSave() {
       const entries = getCommittedEntries();
@@ -165,11 +196,14 @@ export default function TrackScreen() {
             entries.map((e, i) => ({
                date: e.date,
                category_id: e.row.category_id,
+               source_id: e.row.source_id,
                amount: parseFloat(e.row.amount),
                description: e.row.description.trim(),
                sort_order: base + i,
             })),
          );
+         const lastCommitted = entries[entries.length - 1].row;
+         setLastSourceId(lastCommitted.source_id);
          clearAll();
          if (isCurrentMonth) ensureDayRows(TODAY);
          await loadExpenses();
@@ -262,6 +296,7 @@ export default function TrackScreen() {
                      <SavedExpenseRow
                         expense={item}
                         categories={categories}
+                        sources={sources}
                         onDelete={async () => {
                            await deleteExpense(db, item.id);
                            await loadExpenses();
@@ -280,6 +315,7 @@ export default function TrackScreen() {
                                     key={row.id}
                                     row={row}
                                     categories={categories}
+                                    sources={sources}
                                     amountInputRef={
                                        refs.amount as React.RefObject<TextInput | null>
                                     }
@@ -292,6 +328,9 @@ export default function TrackScreen() {
                                     }
                                     onCategoryChange={(id) =>
                                        updateRow(section.date, row.id, "category_id", id)
+                                    }
+                                    onSourceChange={(id) =>
+                                       updateRow(section.date, row.id, "source_id", id)
                                     }
                                     onAmountSubmit={() => advance(section.date, row.id, "amount")}
                                     onDescriptionSubmit={() =>

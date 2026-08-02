@@ -128,4 +128,48 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
          await db.execAsync("PRAGMA user_version = 4");
       });
    }
+
+   if (v < 5) {
+      await db.withTransactionAsync(async () => {
+         await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS sources (
+               id INTEGER PRIMARY KEY,
+               name TEXT NOT NULL,
+               currency TEXT NOT NULL,
+               color TEXT,
+               opening_balance REAL NOT NULL DEFAULT 0,
+               sort_order INTEGER NOT NULL,
+               created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS income_entries (
+               id TEXT PRIMARY KEY,
+               source_id INTEGER NOT NULL REFERENCES sources(id),
+               amount REAL NOT NULL,
+               date TEXT NOT NULL,
+               created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS exchange_rates (
+               currency TEXT PRIMARY KEY,
+               rate REAL NOT NULL,
+               updated_at TEXT NOT NULL
+            );
+
+            ALTER TABLE expenses ADD COLUMN source_id INTEGER REFERENCES sources(id);
+         `);
+         await db.runAsync(
+            "INSERT OR IGNORE INTO sources (id, name, currency, color, opening_balance, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            1,
+            "Cash",
+            "JPY",
+            "#8B9DC3",
+            0,
+            1,
+            new Date().toISOString(),
+         );
+         await db.execAsync("UPDATE expenses SET source_id = 1 WHERE source_id IS NULL");
+         await db.execAsync("PRAGMA user_version = 5");
+      });
+   }
 }

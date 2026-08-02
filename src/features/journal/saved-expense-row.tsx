@@ -2,22 +2,27 @@ import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { type Category, resolveCategoryColor } from "@/constants/categories";
+import { formatCurrencyAmount } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
-import type { Expense } from "@/db/expenses";
+import { type Expense } from "@/db/expenses";
+import { type SourceRow } from "@/db/sources";
 
 type Props = {
    expense: Expense;
    categories: readonly Category[];
+   sources: readonly SourceRow[];
    onDelete?: () => void;
 };
 
-export function SavedExpenseRow({ expense, categories, onDelete }: Props) {
+export function SavedExpenseRow({ expense, categories, sources, onDelete }: Props) {
    const category = categories.find((c) => c.id === expense.category_id);
    const dotColor = resolveCategoryColor(categories, expense.category_id);
+   const source = sources.find((s) => s.id === expense.source_id);
+   const currency = source?.currency ?? "JPY";
 
    function handleLongPress() {
       if (!onDelete) return;
-      const label = expense.description || formatAmount(expense.amount);
+      const label = expense.description || formatCurrencyAmount(expense.amount, currency);
       Alert.alert("Delete expense", `Delete "${label}"?`, [
          { text: "Cancel", style: "cancel" },
          { text: "Delete", style: "destructive", onPress: onDelete },
@@ -36,13 +41,11 @@ export function SavedExpenseRow({ expense, categories, onDelete }: Props) {
          <ThemedText themeColor="textSecondary" style={styles.description} numberOfLines={1}>
             {expense.description}
          </ThemedText>
-         <ThemedText style={styles.amount}>{formatAmount(expense.amount)}</ThemedText>
+         <ThemedText style={styles.amount}>
+            {formatCurrencyAmount(expense.amount, currency)}
+         </ThemedText>
       </TouchableOpacity>
    );
-}
-
-function formatAmount(amount: number) {
-   return amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 const styles = StyleSheet.create({
