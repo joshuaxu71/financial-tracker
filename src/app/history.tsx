@@ -1,12 +1,12 @@
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type DimensionValue, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { resolveCategoryColor } from "@/constants/categories";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useTabNavigation } from "@/context/tab-navigation";
 import {
    type BudgetHistoryRow,
    type CategoryRow,
@@ -51,6 +51,7 @@ const WINDOW_OPTIONS = [1, 3, 6, 12] as const;
 export default function DashboardScreen() {
    const db = useSQLiteContext();
    const theme = useTheme();
+   const { activeIndex } = useTabNavigation();
    const { year: initYear, month: initMonth } = currentYearMonth();
 
    const [year, setYear] = useState(initYear);
@@ -81,7 +82,7 @@ export default function DashboardScreen() {
 
    useEffect(() => {
       load();
-   }, [load]);
+   }, [load, activeIndex]);
 
    const isCurrentMonth = year === initYear && month === initMonth;
 
@@ -208,12 +209,8 @@ export default function DashboardScreen() {
 
    return (
       <ThemedView style={styles.container}>
-         <SafeAreaView style={styles.safeArea} edges={["top"]}>
+         <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-               <View style={styles.header}>
-                  <ThemedText type="subtitle">Dashboard</ThemedText>
-               </View>
-
                <View style={styles.monthNav}>
                   <TouchableOpacity onPress={navigatePrev} style={styles.arrowButton}>
                      <ThemedText themeColor="textSecondary">←</ThemedText>
@@ -293,7 +290,7 @@ export default function DashboardScreen() {
                   tree.map((node) => renderNode(node))
                )}
             </ScrollView>
-         </SafeAreaView>
+         </View>
 
          <MonthPickerModal
             visible={showMonthPicker}
@@ -314,13 +311,8 @@ const styles = StyleSheet.create({
    scrollContent: {
       gap: Spacing.three,
       paddingTop: Spacing.three,
-      paddingBottom: BottomTabInset + Spacing.four,
+      paddingBottom: Spacing.five,
       paddingHorizontal: Spacing.four,
-   },
-   header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
    },
    monthNav: {
       flexDirection: "row",

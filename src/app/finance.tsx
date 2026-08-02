@@ -1,12 +1,12 @@
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { formatCurrencyAmount } from "@/constants/currencies";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useTabNavigation } from "@/context/tab-navigation";
 import { type Expense, getAllExpenses } from "@/db/expenses";
 import { convertToJpy, getRates, refreshRates } from "@/db/rates";
 import {
@@ -27,6 +27,7 @@ import { formatDisplayDate } from "@/utils/date";
 export default function FinanceScreen() {
    const db = useSQLiteContext();
    const theme = useTheme();
+   const { activeIndex } = useTabNavigation();
 
    const [sources, setSources] = useState<SourceRow[]>([]);
    const [income, setIncome] = useState<IncomeRow[]>([]);
@@ -55,7 +56,7 @@ export default function FinanceScreen() {
    useEffect(() => {
       load();
       refreshRates(db).then(setRates);
-   }, [db, load]);
+   }, [db, load, activeIndex]);
 
    const balance = useMemo(() => {
       const map = new Map<number, number>();
@@ -117,10 +118,9 @@ export default function FinanceScreen() {
 
    return (
       <ThemedView style={styles.container}>
-         <SafeAreaView style={styles.safeArea} edges={["top"]}>
+         <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                <View style={styles.header}>
-                  <ThemedText type="subtitle">Finance</ThemedText>
                   <View style={styles.headerActions}>
                      <TouchableOpacity
                         style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
@@ -261,7 +261,7 @@ export default function FinanceScreen() {
                   })
                )}
             </ScrollView>
-         </SafeAreaView>
+         </View>
 
          <SourcesModal
             visible={showSources}
@@ -291,12 +291,12 @@ const styles = StyleSheet.create({
    scrollContent: {
       gap: Spacing.three,
       paddingTop: Spacing.three,
-      paddingBottom: BottomTabInset + Spacing.four,
+      paddingBottom: Spacing.five,
       paddingHorizontal: Spacing.four,
    },
    header: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "flex-end",
       alignItems: "center",
    },
    headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.two },

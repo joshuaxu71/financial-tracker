@@ -1,12 +1,12 @@
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { type DimensionValue, ScrollView, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { resolveCategoryColor } from "@/constants/categories";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useTabNavigation } from "@/context/tab-navigation";
 import {
    type BudgetHistoryRow,
    type CategoryRow,
@@ -47,6 +47,7 @@ function buildTree(categories: CategoryRow[]): BudgetNode[] {
 export default function BudgetScreen() {
    const db = useSQLiteContext();
    const theme = useTheme();
+   const { activeIndex } = useTabNavigation();
    const { year, month } = currentYearMonth();
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
@@ -70,7 +71,7 @@ export default function BudgetScreen() {
 
    useEffect(() => {
       load();
-   }, [load]);
+   }, [load, activeIndex]);
 
    function renderNode(node: BudgetNode) {
       if (node.category.budget == null) return null;
@@ -132,12 +133,8 @@ export default function BudgetScreen() {
 
    return (
       <ThemedView style={styles.container}>
-         <SafeAreaView style={styles.safeArea} edges={["top"]}>
+         <View style={styles.safeArea}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-               <View style={styles.header}>
-                  <ThemedText type="subtitle">Budget</ThemedText>
-               </View>
-
                <ThemedView type="backgroundElement" style={styles.summaryCard}>
                   <ThemedText type="small" themeColor="textSecondary">
                      {monthLabel}
@@ -165,7 +162,7 @@ export default function BudgetScreen() {
                   tree.map((node) => renderNode(node))
                )}
             </ScrollView>
-         </SafeAreaView>
+         </View>
       </ThemedView>
    );
 }
@@ -176,13 +173,8 @@ const styles = StyleSheet.create({
    scrollContent: {
       gap: Spacing.three,
       paddingTop: Spacing.three,
-      paddingBottom: BottomTabInset + Spacing.four,
+      paddingBottom: Spacing.five,
       paddingHorizontal: Spacing.four,
-   },
-   header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
    },
    summaryCard: {
       alignItems: "center",

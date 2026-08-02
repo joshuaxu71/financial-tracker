@@ -10,11 +10,11 @@ import {
    TouchableOpacity,
    View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { BottomTabInset, Spacing } from "@/constants/theme";
+import { Spacing } from "@/constants/theme";
+import { useTabNavigation } from "@/context/tab-navigation";
 import { type CategoryRow, getAllCategories } from "@/db/categories";
 import { type Expense, deleteExpense, getExpensesByMonth, insertExpenses } from "@/db/expenses";
 import { convertToJpy, getRates } from "@/db/rates";
@@ -45,6 +45,7 @@ type RowRefs = { amount: { current: TextInput | null }; desc: { current: TextInp
 export default function TrackScreen() {
    const db = useSQLiteContext();
    const theme = useTheme();
+   const { activeIndex } = useTabNavigation();
 
    const [viewYear, setViewYear] = useState(NOW_YEAR);
    const [viewMonth, setViewMonth] = useState(NOW_MONTH);
@@ -113,15 +114,15 @@ export default function TrackScreen() {
 
    useEffect(() => {
       loadExpenses();
-   }, [loadExpenses]);
+   }, [loadExpenses, activeIndex]);
 
    useEffect(() => {
       loadCategories();
-   }, [loadCategories]);
+   }, [loadCategories, activeIndex]);
 
    useEffect(() => {
       loadSources();
-   }, [loadSources]);
+   }, [loadSources, activeIndex]);
 
    useEffect(() => {
       if (isCurrentMonth) ensureDayRows(TODAY);
@@ -245,7 +246,7 @@ export default function TrackScreen() {
             style={styles.flex}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
          >
-            <SafeAreaView style={styles.flex} edges={["top"]}>
+            <View style={styles.flex}>
                <View style={styles.stickyHeader}>
                   <View style={styles.headerLeft}>
                      <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
@@ -350,13 +351,11 @@ export default function TrackScreen() {
                   stickySectionHeadersEnabled
                   keyboardShouldPersistTaps="handled"
                   contentContainerStyle={{
-                     paddingBottom: BottomTabInset + Spacing.five + Spacing.three,
+                     paddingBottom: Spacing.five,
                   }}
                />
                {hasAnyPending && (
-                  <View
-                     style={[styles.saveArea, { paddingBottom: BottomTabInset + Spacing.three }]}
-                  >
+                  <View style={[styles.saveArea, { paddingBottom: Spacing.three }]}>
                      <TouchableOpacity
                         onPress={handleSave}
                         disabled={isSaving}
@@ -369,7 +368,7 @@ export default function TrackScreen() {
                      </TouchableOpacity>
                   </View>
                )}
-            </SafeAreaView>
+            </View>
          </KeyboardAvoidingView>
       </ThemedView>
    );
