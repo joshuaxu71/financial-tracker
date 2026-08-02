@@ -244,13 +244,41 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                      </ThemedText>
                      <TouchableOpacity
                         style={[styles.parentRow, { backgroundColor: theme.backgroundSelected }]}
-                        onPress={() => setShowCurrencyPicker(true)}
+                        onPress={() => setShowCurrencyPicker((v) => !v)}
                      >
                         <ThemedText>
                            {editor.currency} · {currencyName(editor.currency)}
                         </ThemedText>
-                        <ThemedText themeColor="textSecondary">▾</ThemedText>
+                        <ThemedText themeColor="textSecondary">
+                           {showCurrencyPicker ? "▴" : "▾"}
+                        </ThemedText>
                      </TouchableOpacity>
+                     {showCurrencyPicker && (
+                        <ScrollView style={styles.currencyList} nestedScrollEnabled>
+                           {CURRENCIES.map((c) => (
+                              <TouchableOpacity
+                                 key={c.code}
+                                 style={styles.pickerRow}
+                                 onPress={() => {
+                                    setEditor({ ...editor, currency: c.code });
+                                    setShowCurrencyPicker(false);
+                                 }}
+                              >
+                                 <ThemedText
+                                    style={[
+                                       styles.pickerLabel,
+                                       editor.currency === c.code && styles.selectedText,
+                                    ]}
+                                 >
+                                    {c.code} · {c.name}
+                                 </ThemedText>
+                                 {editor.currency === c.code && (
+                                    <ThemedText themeColor="textSecondary">✓</ThemedText>
+                                 )}
+                              </TouchableOpacity>
+                           ))}
+                        </ScrollView>
+                     )}
 
                      <ThemedText themeColor="textSecondary" style={styles.label}>
                         Opening balance
@@ -301,53 +329,6 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            </ThemedText>
                         </TouchableOpacity>
                      </View>
-                  </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
-
-         {showCurrencyPicker && editor && (
-            <Modal
-               transparent
-               animationType="fade"
-               onRequestClose={() => setShowCurrencyPicker(false)}
-            >
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setShowCurrencyPicker(false)}
-               >
-                  <View
-                     style={[styles.picker, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
-                        Currency
-                     </ThemedText>
-                     <ScrollView nestedScrollEnabled>
-                        {CURRENCIES.map((c) => (
-                           <TouchableOpacity
-                              key={c.code}
-                              style={styles.pickerRow}
-                              onPress={() => {
-                                 setEditor({ ...editor, currency: c.code });
-                                 setShowCurrencyPicker(false);
-                              }}
-                           >
-                              <ThemedText
-                                 style={[
-                                    styles.pickerLabel,
-                                    editor.currency === c.code && styles.selectedText,
-                                 ]}
-                              >
-                                 {c.code} · {c.name}
-                              </ThemedText>
-                              {editor.currency === c.code && (
-                                 <ThemedText themeColor="textSecondary">✓</ThemedText>
-                              )}
-                           </TouchableOpacity>
-                        ))}
-                     </ScrollView>
                   </View>
                </TouchableOpacity>
             </Modal>
@@ -465,6 +446,11 @@ const styles = StyleSheet.create({
       alignItems: "center",
       paddingHorizontal: Spacing.three,
       paddingVertical: Spacing.two,
+      borderRadius: Spacing.two,
+   },
+   currencyList: {
+      maxHeight: 220,
+      marginTop: Spacing.one,
       borderRadius: Spacing.two,
    },
    swatchRow: {

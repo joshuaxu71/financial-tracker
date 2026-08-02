@@ -3,6 +3,7 @@ export const BASE_CURRENCY = "JPY" as const;
 export const CURRENCIES: readonly { code: string; name: string }[] = [
    { code: "JPY", name: "Japanese Yen" },
    { code: "USD", name: "US Dollar" },
+   { code: "IDR", name: "Indonesian Rupiah" },
    { code: "EUR", name: "Euro" },
    { code: "GBP", name: "British Pound" },
    { code: "AUD", name: "Australian Dollar" },
@@ -22,7 +23,7 @@ export function currencyName(code: string): string {
 }
 
 export function formatCurrencyAmount(amount: number, currency: string): string {
-   const noDecimals = currency === "JPY" || currency === "KRW";
+   const noDecimals = currency === "JPY" || currency === "KRW" || currency === "IDR";
    return new Intl.NumberFormat("ja-JP", {
       style: "currency",
       currency,
