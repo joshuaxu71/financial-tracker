@@ -1,6 +1,6 @@
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -9,20 +9,12 @@ import { Spacing } from "@/constants/theme";
 import { useTabNavigation } from "@/context/tab-navigation";
 import { type Expense, getAllExpenses } from "@/db/expenses";
 import { convertToJpy, getRates, refreshRates } from "@/db/rates";
-import {
-   type IncomeRow,
-   type SourceRow,
-   deleteIncome,
-   getAllIncome,
-   getAllSources,
-} from "@/db/sources";
-import { type TransferRow, deleteTransfer, getAllTransfers } from "@/db/transfers";
-import { IncomeModal } from "@/features/finance/income-modal";
+import { type IncomeRow, type SourceRow, getAllIncome, getAllSources } from "@/db/sources";
+import { type TransferRow, getAllTransfers } from "@/db/transfers";
+import { SourceDetailModal } from "@/features/finance/source-detail-modal";
 import { SourcesModal } from "@/features/finance/sources-modal";
-import { TransferModal } from "@/features/finance/transfer-modal";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
-import { formatDisplayDate } from "@/utils/date";
 
 export default function FinanceScreen() {
    const db = useSQLiteContext();
@@ -35,8 +27,7 @@ export default function FinanceScreen() {
    const [transfers, setTransfers] = useState<TransferRow[]>([]);
    const [rates, setRates] = useState<Map<string, number>>(new Map());
    const [showSources, setShowSources] = useState(false);
-   const [incomeSource, setIncomeSource] = useState<SourceRow | null>(null);
-   const [transferFromSource, setTransferFromSource] = useState<SourceRow | null>(null);
+   const [detailSource, setDetailSource] = useState<SourceRow | null>(null);
 
    const load = useCallback(async () => {
       const [s, i, e, t, r] = await Promise.all([
@@ -77,44 +68,6 @@ export default function FinanceScreen() {
       }
       return total;
    }, [sources, balance, rates]);
-
-   async function handleDeleteIncome(id: string) {
-      await deleteIncome(db, id);
-      await load();
-   }
-
-   function confirmDeleteIncome(entry: IncomeRow) {
-      Alert.alert(
-         "Delete entry",
-         `Delete income of ${formatCurrencyAmount(entry.amount, "JPY")}?`,
-         [
-            { text: "Cancel", style: "cancel" },
-            { text: "Delete", style: "destructive", onPress: () => handleDeleteIncome(entry.id) },
-         ],
-      );
-   }
-
-   async function handleDeleteTransfer(id: string) {
-      await deleteTransfer(db, id);
-      await load();
-   }
-
-   function confirmDeleteTransfer(t: TransferRow) {
-      const fromSource = sources.find((s) => s.id === t.from_source_id);
-      const toSource = sources.find((s) => s.id === t.to_source_id);
-      Alert.alert(
-         "Delete transfer",
-         `Delete transfer of ${formatCurrencyAmount(t.from_amount, fromSource?.currency ?? "")} → ${formatCurrencyAmount(t.to_amount, toSource?.currency ?? "")}?`,
-         [
-            { text: "Cancel", style: "cancel" },
-            {
-               text: "Delete",
-               style: "destructive",
-               onPress: () => handleDeleteTransfer(t.id),
-            },
-         ],
-      );
-   }
 
    return (
       <ThemedView style={styles.container}>
@@ -162,106 +115,45 @@ export default function FinanceScreen() {
                   sources.map((s) => {
                      const bal = balance.get(s.id) ?? 0;
                      const jpy = convertToJpy(bal, s.currency, rates);
-                     const entries = income.filter((i) => i.source_id === s.id);
-                     const sourceTransfers = transfers.filter(
-                        (t) => t.from_source_id === s.id || t.to_source_id === s.id,
-                     );
                      return (
-                        <ThemedView key={s.id} type="backgroundElement" style={styles.sourceCard}>
-                           <View style={styles.sourceHeader}>
-                              <View
-                                 style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]}
-                              />
-                              <View style={styles.sourceTitle}>
-                                 <ThemedText type="smallBold" numberOfLines={1}>
-                                    {s.name}
-                                 </ThemedText>
-                                 <ThemedText type="small" themeColor="textSecondary">
-                                    {s.currency}
-                                 </ThemedText>
-                              </View>
-                              <View style={styles.balanceBlock}>
-                                 <ThemedText style={styles.balance}>
-                                    {formatCurrencyAmount(bal, s.currency)}
-                                 </ThemedText>
-                                 {s.currency !== "JPY" && (
-                                    <ThemedText type="small" themeColor="textSecondary">
-                                       ≈ {formatAmount(jpy)}
+                        <TouchableOpacity
+                           key={s.id}
+                           activeOpacity={0.7}
+                           onPress={() => setDetailSource(s)}
+                        >
+                           <ThemedView type="backgroundElement" style={styles.sourceCard}>
+                              <View style={styles.sourceHeader}>
+                                 <View
+                                    style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]}
+                                 />
+                                 <View style={styles.sourceTitle}>
+                                    <ThemedText type="smallBold" numberOfLines={1}>
+                                       {s.name}
                                     </ThemedText>
-                                 )}
-                              </View>
-                           </View>
-
-                           {entries.length > 0 && (
-                              <View style={styles.incomeList}>
-                                 {entries.map((entry) => (
-                                    <TouchableOpacity
-                                       key={entry.id}
-                                       style={styles.incomeRow}
-                                       onLongPress={() => confirmDeleteIncome(entry)}
-                                    >
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                       {s.currency}
+                                    </ThemedText>
+                                 </View>
+                                 <View style={styles.balanceBlock}>
+                                    <ThemedText style={styles.balance}>
+                                       {formatCurrencyAmount(bal, s.currency)}
+                                    </ThemedText>
+                                    {s.currency !== "JPY" && (
                                        <ThemedText type="small" themeColor="textSecondary">
-                                          {formatDisplayDate(entry.date)}
+                                          ≈ {formatAmount(jpy)}
                                        </ThemedText>
-                                       <ThemedText type="small" style={styles.incomeAmount}>
-                                          + {formatCurrencyAmount(entry.amount, s.currency)}
-                                       </ThemedText>
-                                    </TouchableOpacity>
-                                 ))}
+                                    )}
+                                 </View>
+                                 <ThemedText
+                                    type="small"
+                                    themeColor="textSecondary"
+                                    style={styles.chevron}
+                                 >
+                                    ›
+                                 </ThemedText>
                               </View>
-                           )}
-
-                           {sourceTransfers.length > 0 && (
-                              <View style={styles.incomeList}>
-                                 {sourceTransfers.map((t) => {
-                                    const isOut = t.from_source_id === s.id;
-                                    const counterpart = sources.find(
-                                       (x) => x.id === (isOut ? t.to_source_id : t.from_source_id),
-                                    );
-                                    const amount = isOut ? t.from_amount : t.to_amount;
-                                    return (
-                                       <TouchableOpacity
-                                          key={t.id}
-                                          style={styles.incomeRow}
-                                          onLongPress={() => confirmDeleteTransfer(t)}
-                                       >
-                                          <View style={styles.transferLeft}>
-                                             <ThemedText type="small" themeColor="textSecondary">
-                                                {formatDisplayDate(t.date)}
-                                             </ThemedText>
-                                             <ThemedText type="small" themeColor="textSecondary">
-                                                {isOut
-                                                   ? `→ ${counterpart?.name ?? "?"}`
-                                                   : `← ${counterpart?.name ?? "?"}`}
-                                             </ThemedText>
-                                          </View>
-                                          <ThemedText
-                                             type="small"
-                                             style={[
-                                                styles.incomeAmount,
-                                                { color: isOut ? theme.textSecondary : undefined },
-                                             ]}
-                                          >
-                                             {isOut ? "- " : "+ "}
-                                             {formatCurrencyAmount(amount, s.currency)}
-                                          </ThemedText>
-                                       </TouchableOpacity>
-                                    );
-                                 })}
-                              </View>
-                           )}
-
-                           <View style={styles.cardActions}>
-                              <TouchableOpacity onPress={() => setIncomeSource(s)}>
-                                 <ThemedText type="smallBold">+ Add money</ThemedText>
-                              </TouchableOpacity>
-                              {sources.length >= 2 && (
-                                 <TouchableOpacity onPress={() => setTransferFromSource(s)}>
-                                    <ThemedText type="smallBold">→ Transfer</ThemedText>
-                                 </TouchableOpacity>
-                              )}
-                           </View>
-                        </ThemedView>
+                           </ThemedView>
+                        </TouchableOpacity>
                      );
                   })
                )}
@@ -273,17 +165,21 @@ export default function FinanceScreen() {
             onDismiss={() => setShowSources(false)}
             onChanged={load}
          />
-         <IncomeModal
-            visible={incomeSource != null}
-            source={incomeSource}
-            onDismiss={() => setIncomeSource(null)}
-            onChanged={load}
-         />
-         <TransferModal
-            visible={transferFromSource != null}
-            fromSource={transferFromSource}
+         <SourceDetailModal
+            visible={detailSource != null}
+            source={detailSource}
             sources={sources}
-            onDismiss={() => setTransferFromSource(null)}
+            income={income.filter((i) => i.source_id === detailSource?.id)}
+            transfers={transfers.filter(
+               (t) => t.from_source_id === detailSource?.id || t.to_source_id === detailSource?.id,
+            )}
+            balance={detailSource ? (balance.get(detailSource.id) ?? 0) : 0}
+            jpy={
+               detailSource
+                  ? convertToJpy(balance.get(detailSource.id) ?? 0, detailSource.currency, rates)
+                  : 0
+            }
+            onDismiss={() => setDetailSource(null)}
             onChanged={load}
          />
       </ThemedView>
@@ -330,7 +226,6 @@ const styles = StyleSheet.create({
       textAlign: "center",
    },
    sourceCard: {
-      gap: Spacing.three,
       padding: Spacing.four,
       borderRadius: Spacing.three,
    },
@@ -358,26 +253,8 @@ const styles = StyleSheet.create({
       fontSize: 17,
       fontVariant: ["tabular-nums"],
    },
-   incomeList: {
-      gap: Spacing.one,
-      paddingTop: Spacing.two,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: "#2E3135",
-   },
-   incomeRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: Spacing.half,
-   },
-   incomeAmount: {
-      fontVariant: ["tabular-nums"],
-   },
-   transferLeft: {
-      gap: Spacing.half,
-   },
-   cardActions: {
-      flexDirection: "row",
-      gap: Spacing.four,
+   chevron: {
+      fontSize: 24,
+      lineHeight: 28,
    },
 });

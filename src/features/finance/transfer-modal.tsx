@@ -1,11 +1,11 @@
 import { useSQLiteContext } from "expo-sqlite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
-import { insertTransfer } from "@/db/transfers";
+import { type TransferRow, insertTransfer, updateTransfer } from "@/db/transfers";
 import { useTheme } from "@/hooks/use-theme";
 import { today } from "@/utils/date";
 
@@ -13,17 +13,39 @@ type Props = {
    visible: boolean;
    fromSource: SourceRow | null;
    sources: SourceRow[];
+   transfer?: TransferRow | null;
    onDismiss: () => void;
    onChanged: () => void;
 };
 
-export function TransferModal({ visible, fromSource, sources, onDismiss, onChanged }: Props) {
+export function TransferModal({
+   visible,
+   fromSource,
+   sources,
+   transfer = null,
+   onDismiss,
+   onChanged,
+}: Props) {
    const db = useSQLiteContext();
    const theme = useTheme();
    const [toSourceId, setToSourceId] = useState<number | null>(null);
    const [fromAmount, setFromAmount] = useState("");
    const [toAmount, setToAmount] = useState("");
    const [date, setDate] = useState(today());
+
+   useEffect(() => {
+      if (transfer && fromSource) {
+         setToSourceId(transfer.to_source_id);
+         setFromAmount(String(transfer.from_amount));
+         setToAmount(String(transfer.to_amount));
+         setDate(transfer.date);
+      } else {
+         setToSourceId(null);
+         setFromAmount("");
+         setToAmount("");
+         setDate(today());
+      }
+   }, [transfer, fromSource]);
 
    if (!fromSource) return null;
    const active = fromSource;
@@ -61,7 +83,7 @@ export function TransferModal({ visible, fromSource, sources, onDismiss, onChang
          return;
       }
       try {
-         await insertTransfer(db, {
+         const input = {
             from_source_id: active.id,
             to_source_id: toSource.id,
             from_amount: from,
@@ -69,7 +91,12 @@ export function TransferModal({ visible, fromSource, sources, onDismiss, onChang
             exchange_rate: to / from,
             date,
             description: "",
-         });
+         };
+         if (transfer) {
+            await updateTransfer(db, transfer.id, input);
+         } else {
+            await insertTransfer(db, input);
+         }
          close();
          onChanged();
       } catch {
@@ -85,7 +112,7 @@ export function TransferModal({ visible, fromSource, sources, onDismiss, onChang
                onStartShouldSetResponder={() => true}
             >
                <ThemedText type="smallBold" style={styles.title}>
-                  Transfer · {active.name}
+                  {transfer ? `Edit transfer · ${active.name}` : `Transfer · ${active.name}`}
                </ThemedText>
 
                <ThemedText themeColor="textSecondary" style={styles.label}>

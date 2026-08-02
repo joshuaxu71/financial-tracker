@@ -14,24 +14,23 @@ export type TransferRow = {
    created_at: string;
 };
 
+export type TransferInput = {
+   from_source_id: number;
+   to_source_id: number;
+   from_amount: number;
+   to_amount: number;
+   exchange_rate: number;
+   date: string;
+   description: string;
+};
+
 export async function getAllTransfers(db: SQLiteDatabase): Promise<TransferRow[]> {
    return db.getAllAsync<TransferRow>(
       "SELECT * FROM transfers ORDER BY date DESC, created_at DESC",
    );
 }
 
-export async function insertTransfer(
-   db: SQLiteDatabase,
-   input: {
-      from_source_id: number;
-      to_source_id: number;
-      from_amount: number;
-      to_amount: number;
-      exchange_rate: number;
-      date: string;
-      description: string;
-   },
-): Promise<void> {
+export async function insertTransfer(db: SQLiteDatabase, input: TransferInput): Promise<void> {
    await db.runAsync(
       `INSERT INTO transfers
          (id, from_source_id, to_source_id, from_amount, to_amount, exchange_rate, date, description, created_at)
@@ -45,6 +44,26 @@ export async function insertTransfer(
       input.date,
       input.description,
       new Date().toISOString(),
+   );
+}
+
+export async function updateTransfer(
+   db: SQLiteDatabase,
+   id: string,
+   input: TransferInput,
+): Promise<void> {
+   await db.runAsync(
+      `UPDATE transfers SET
+         from_source_id = ?, to_source_id = ?, from_amount = ?, to_amount = ?, exchange_rate = ?, date = ?, description = ?
+       WHERE id = ?`,
+      input.from_source_id,
+      input.to_source_id,
+      input.from_amount,
+      input.to_amount,
+      input.exchange_rate,
+      input.date,
+      input.description,
+      id,
    );
 }
 
