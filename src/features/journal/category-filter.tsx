@@ -1,24 +1,20 @@
 import { ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { CATEGORY_GROUPS } from "@/constants/categories";
+import type { Category } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
+   categories: readonly Category[];
    selectedGroupId: number | null;
    onChange: (groupId: number | null) => void;
 };
 
-const ALL_CHIP = { id: null as number | null, name: "All" };
-
-export function CategoryFilter({ selectedGroupId, onChange }: Props) {
+export function CategoryFilter({ categories, selectedGroupId, onChange }: Props) {
    const theme = useTheme();
 
-   const chips = [
-      ALL_CHIP,
-      ...CATEGORY_GROUPS.map((g) => ({ id: g.id as number | null, name: g.name })),
-   ];
+   const topLevel = categories.filter((c) => c.parent_id === null);
 
    return (
       <ScrollView
@@ -26,27 +22,45 @@ export function CategoryFilter({ selectedGroupId, onChange }: Props) {
          showsHorizontalScrollIndicator={false}
          contentContainerStyle={styles.content}
       >
-         {chips.map((chip) => {
-            const selected = chip.id === selectedGroupId;
-            return (
-               <TouchableOpacity
-                  key={chip.id ?? "all"}
-                  style={[
-                     styles.chip,
-                     { backgroundColor: selected ? theme.text : theme.backgroundElement },
-                  ]}
-                  onPress={() => onChange(chip.id)}
-               >
-                  <ThemedText
-                     type="smallBold"
-                     style={{ color: selected ? theme.background : theme.text }}
-                  >
-                     {chip.name}
-                  </ThemedText>
-               </TouchableOpacity>
-            );
-         })}
+         <Chip
+            label="All"
+            selected={selectedGroupId === null}
+            theme={theme}
+            onPress={() => onChange(null)}
+         />
+         {topLevel.map((group) => (
+            <Chip
+               key={group.id}
+               label={group.name}
+               selected={selectedGroupId === group.id}
+               theme={theme}
+               onPress={() => onChange(group.id)}
+            />
+         ))}
       </ScrollView>
+   );
+}
+
+function Chip({
+   label,
+   selected,
+   theme,
+   onPress,
+}: {
+   label: string;
+   selected: boolean;
+   theme: { text: string; background: string; backgroundElement: string };
+   onPress: () => void;
+}) {
+   return (
+      <TouchableOpacity
+         style={[styles.chip, { backgroundColor: selected ? theme.text : theme.backgroundElement }]}
+         onPress={onPress}
+      >
+         <ThemedText type="smallBold" style={{ color: selected ? theme.background : theme.text }}>
+            {label}
+         </ThemedText>
+      </TouchableOpacity>
    );
 }
 

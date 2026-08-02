@@ -1,29 +1,100 @@
 import { useState } from "react";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { CATEGORY_GROUPS, getLeavesForGroup } from "@/constants/categories";
+import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
    visible: boolean;
+   categories: readonly Category[];
    selectedCategoryId: number;
    onSelect: (categoryId: number) => void;
    onDismiss: () => void;
 };
 
-export function InlineCategoryPicker({ visible, selectedCategoryId, onSelect, onDismiss }: Props) {
+type TreeNode = {
+   category: Category;
+   children: TreeNode[];
+};
+
+function buildTree(categories: readonly Category[]): TreeNode[] {
+   const byParent = new Map<number | null, Category[]>();
+   for (const c of categories) {
+      const list = byParent.get(c.parent_id) ?? [];
+      list.push(c);
+      byParent.set(c.parent_id, list);
+   }
+   function build(cats: Category[]): TreeNode[] {
+      return cats.map((c) => ({ category: c, children: build(byParent.get(c.id) ?? []) }));
+   }
+   return build(byParent.get(null) ?? []);
+}
+
+export function InlineCategoryPicker({
+   visible,
+   categories,
+   selectedCategoryId,
+   onSelect,
+   onDismiss,
+}: Props) {
    const theme = useTheme();
-   const [groupId, setGroupId] = useState<number | null>(null);
+   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+   const tree = buildTree(categories);
+
+   function reset() {
+      setExpanded(new Set());
+   }
 
    function handleDismiss() {
-      setGroupId(null);
+      reset();
       onDismiss();
    }
 
-   const activeGroup = groupId !== null ? CATEGORY_GROUPS.find((g) => g.id === groupId) : null;
-   const leaves = groupId !== null ? getLeavesForGroup(groupId) : [];
+   function toggle(id: number) {
+      setExpanded((prev) => {
+         const next = new Set(prev);
+         if (next.has(id)) next.delete(id);
+         else next.add(id);
+         return next;
+      });
+   }
+
+   function renderNode(node: TreeNode, depth: number) {
+      const hasChildren = node.children.length > 0;
+      const isExpanded = expanded.has(node.category.id);
+      const isSelected = node.category.id === selectedCategoryId;
+      const color = resolveCategoryColor(categories, node.category.id);
+
+      return (
+         <View key={node.category.id}>
+            <TouchableOpacity
+               style={[styles.row, { paddingLeft: Spacing.three + depth * Spacing.three }]}
+               onPress={() => (hasChildren ? toggle(node.category.id) : select(node.category.id))}
+            >
+               {hasChildren ? (
+                  <ThemedText themeColor="textSecondary" style={styles.chevron}>
+                     {isExpanded ? "▾" : "▸"}
+                  </ThemedText>
+               ) : (
+                  <View style={[styles.dot, { backgroundColor: color }]} />
+               )}
+               <ThemedText style={[styles.rowLabel, isSelected && styles.selectedLabel]}>
+                  {node.category.name}
+               </ThemedText>
+               {isSelected && <ThemedText themeColor="textSecondary">✓</ThemedText>}
+            </TouchableOpacity>
+            {hasChildren && isExpanded && node.children.map((c) => renderNode(c, depth + 1))}
+         </View>
+      );
+   }
+
+   function select(id: number) {
+      reset();
+      onSelect(id);
+   }
 
    return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
@@ -32,52 +103,12 @@ export function InlineCategoryPicker({ visible, selectedCategoryId, onSelect, on
                style={[styles.container, { backgroundColor: theme.backgroundElement }]}
                onStartShouldSetResponder={() => true}
             >
-               {groupId === null ? (
-                  <>
-                     <ThemedText type="smallBold" style={styles.header}>
-                        Category
-                     </ThemedText>
-                     {CATEGORY_GROUPS.map((group) => (
-                        <TouchableOpacity
-                           key={group.id}
-                           style={styles.row}
-                           onPress={() => setGroupId(group.id)}
-                        >
-                           <View style={[styles.dot, { backgroundColor: group.color ?? "#888" }]} />
-                           <ThemedText style={styles.rowLabel}>{group.name}</ThemedText>
-                           <ThemedText themeColor="textSecondary">›</ThemedText>
-                        </TouchableOpacity>
-                     ))}
-                  </>
-               ) : (
-                  <>
-                     <TouchableOpacity style={styles.backRow} onPress={() => setGroupId(null)}>
-                        <ThemedText themeColor="textSecondary">‹</ThemedText>
-                        <ThemedText type="smallBold">{activeGroup?.name}</ThemedText>
-                     </TouchableOpacity>
-                     {leaves.map((leaf) => {
-                        const selected = leaf.id === selectedCategoryId;
-                        return (
-                           <TouchableOpacity
-                              key={leaf.id}
-                              style={styles.row}
-                              onPress={() => {
-                                 setGroupId(null);
-                                 onSelect(leaf.id);
-                              }}
-                           >
-                              <View style={styles.dotPlaceholder} />
-                              <ThemedText
-                                 style={[styles.rowLabel, selected && styles.selectedLabel]}
-                              >
-                                 {leaf.name}
-                              </ThemedText>
-                              {selected && <ThemedText themeColor="textSecondary">✓</ThemedText>}
-                           </TouchableOpacity>
-                        );
-                     })}
-                  </>
-               )}
+               <ThemedText type="smallBold" style={styles.header}>
+                  Category
+               </ThemedText>
+               <ScrollView style={styles.scroll} nestedScrollEnabled>
+                  {tree.map((n) => renderNode(n, 0))}
+               </ScrollView>
             </View>
          </TouchableOpacity>
       </Modal>
@@ -92,10 +123,12 @@ const styles = StyleSheet.create({
       backgroundColor: "rgba(0,0,0,0.5)",
    },
    container: {
-      width: 240,
+      width: 260,
+      maxHeight: 420,
       paddingVertical: Spacing.two,
       borderRadius: Spacing.two,
    },
+   scroll: { flexGrow: 0 },
    header: {
       paddingBottom: Spacing.two,
       paddingHorizontal: Spacing.three,
@@ -107,21 +140,15 @@ const styles = StyleSheet.create({
       paddingHorizontal: Spacing.three,
       paddingVertical: Spacing.two,
    },
-   backRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.two,
-      paddingBottom: Spacing.two,
-      paddingHorizontal: Spacing.three,
+   chevron: {
+      width: 14,
+      textAlign: "center",
    },
    dot: {
       width: 8,
       height: 8,
+      marginLeft: 3,
       borderRadius: 4,
-   },
-   dotPlaceholder: {
-      width: 8,
-      height: 8,
    },
    rowLabel: { flex: 1 },
    selectedLabel: { fontWeight: "600" },

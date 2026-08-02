@@ -1,18 +1,19 @@
 import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { getCategoryById, getGroupColor } from "@/constants/categories";
+import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import type { Expense } from "@/db/expenses";
 
 type Props = {
    expense: Expense;
+   categories: readonly Category[];
    onDelete?: () => void;
 };
 
-export function SavedExpenseRow({ expense, onDelete }: Props) {
-   const category = getCategoryById(expense.category_id);
-   const dotColor = getGroupColor(expense.category_id);
+export function SavedExpenseRow({ expense, categories, onDelete }: Props) {
+   const category = categories.find((c) => c.id === expense.category_id);
+   const dotColor = resolveCategoryColor(categories, expense.category_id);
 
    function handleLongPress() {
       if (!onDelete) return;

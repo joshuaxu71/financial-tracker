@@ -52,3 +52,15 @@ export function getGroupColor(categoryId: number): string {
    const group = getCategoryById(cat.parent_id);
    return group?.color ?? "#888888";
 }
+
+export function resolveCategoryColor(categories: readonly Category[], categoryId: number): string {
+   const byId = new Map(categories.map((c) => [c.id, c]));
+   let cat = byId.get(categoryId);
+   const seen = new Set<number>();
+   while (cat && !seen.has(cat.id)) {
+      seen.add(cat.id);
+      if (cat.color) return cat.color;
+      cat = cat.parent_id == null ? undefined : byId.get(cat.parent_id);
+   }
+   return "#888888";
+}

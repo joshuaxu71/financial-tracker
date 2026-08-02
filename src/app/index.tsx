@@ -14,9 +14,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { getCategoryById } from "@/constants/categories";
 import { BottomTabInset, Spacing } from "@/constants/theme";
+import { type CategoryRow, getAllCategories } from "@/db/categories";
 import { type Expense, deleteExpense, getExpensesByMonth, insertExpenses } from "@/db/expenses";
+import { CategoriesModal } from "@/features/categories/categories-modal";
 import { CategoryFilter } from "@/features/journal/category-filter";
 import { JournalEntryRow } from "@/features/journal/journal-entry-row";
 import { MonthPickerModal } from "@/features/journal/month-picker-modal";
@@ -46,8 +47,10 @@ export default function TrackScreen() {
    const [viewYear, setViewYear] = useState(NOW_YEAR);
    const [viewMonth, setViewMonth] = useState(NOW_MONTH);
    const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [filterGroupId, setFilterGroupId] = useState<number | null>(null);
    const [showMonthPicker, setShowMonthPicker] = useState(false);
+   const [showCategories, setShowCategories] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
 
    const {
@@ -65,6 +68,18 @@ export default function TrackScreen() {
 
    const isCurrentMonth = viewYear === NOW_YEAR && viewMonth === NOW_MONTH;
 
+   function isUnderGroup(categoryId: number, groupId: number): boolean {
+      const byId = new Map(categories.map((c) => [c.id, c]));
+      let current = byId.get(categoryId);
+      const seen = new Set<number>();
+      while (current && !seen.has(current.id)) {
+         seen.add(current.id);
+         if (current.parent_id === groupId) return true;
+         current = current.parent_id == null ? undefined : byId.get(current.parent_id);
+      }
+      return false;
+   }
+
    const rowRefsMap = useRef(new Map<string, RowRefs>());
 
    function getRowRefs(rowId: string): RowRefs {
@@ -79,9 +94,17 @@ export default function TrackScreen() {
       setExpenses(data);
    }, [db, viewYear, viewMonth]);
 
+   const loadCategories = useCallback(async () => {
+      setCategories(await getAllCategories(db));
+   }, [db]);
+
    useEffect(() => {
       loadExpenses();
    }, [loadExpenses]);
+
+   useEffect(() => {
+      loadCategories();
+   }, [loadCategories]);
 
    useEffect(() => {
       if (isCurrentMonth) ensureDayRows(TODAY);
@@ -96,7 +119,7 @@ export default function TrackScreen() {
 
    const sections = useMemo<DaySection[]>(() => {
       const filtered = filterGroupId
-         ? expenses.filter((e) => getCategoryById(e.category_id)?.parent_id === filterGroupId)
+         ? expenses.filter((e) => isUnderGroup(e.category_id, filterGroupId))
          : expenses;
 
       const daySet = new Set<string>();
@@ -119,7 +142,7 @@ export default function TrackScreen() {
                dailyTotal: data.reduce((sum, e) => sum + e.amount, 0),
             };
          });
-   }, [expenses, filterGroupId, rowsByDate, isCurrentMonth, viewYear, viewMonth]);
+   }, [expenses, filterGroupId, rowsByDate, isCurrentMonth, viewYear, viewMonth, categories]);
 
    async function handleSave() {
       const entries = getCommittedEntries();
@@ -177,28 +200,46 @@ export default function TrackScreen() {
             }}
             onDismiss={() => setShowMonthPicker(false)}
          />
+         <CategoriesModal
+            visible={showCategories}
+            onDismiss={() => setShowCategories(false)}
+            onChanged={loadCategories}
+         />
          <KeyboardAvoidingView
             style={styles.flex}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
          >
             <SafeAreaView style={styles.flex} edges={["top"]}>
                <View style={styles.stickyHeader}>
-                  <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
-                     <ThemedText type="subtitle">{monthLabel} ▾</ThemedText>
-                  </TouchableOpacity>
-                  {!isCurrentMonth && (
-                     <TouchableOpacity
-                        style={[styles.todayPill, { backgroundColor: theme.backgroundElement }]}
-                        onPress={() => {
-                           setViewYear(NOW_YEAR);
-                           setViewMonth(NOW_MONTH);
-                        }}
-                     >
-                        <ThemedText type="smallBold">Today</ThemedText>
+                  <View style={styles.headerLeft}>
+                     <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
+                        <ThemedText type="subtitle">{monthLabel} ▾</ThemedText>
                      </TouchableOpacity>
-                  )}
+                     {!isCurrentMonth && (
+                        <TouchableOpacity
+                           style={[styles.todayPill, { backgroundColor: theme.backgroundElement }]}
+                           onPress={() => {
+                              setViewYear(NOW_YEAR);
+                              setViewMonth(NOW_MONTH);
+                           }}
+                        >
+                           <ThemedText type="smallBold">Today</ThemedText>
+                        </TouchableOpacity>
+                     )}
+                  </View>
+                  <TouchableOpacity
+                     style={[styles.gearButton, { backgroundColor: theme.backgroundElement }]}
+                     onPress={() => setShowCategories(true)}
+                     accessibilityLabel="Manage categories"
+                  >
+                     <ThemedText type="smallBold">⚙</ThemedText>
+                  </TouchableOpacity>
                </View>
-               <CategoryFilter selectedGroupId={filterGroupId} onChange={setFilterGroupId} />
+               <CategoryFilter
+                  categories={categories}
+                  selectedGroupId={filterGroupId}
+                  onChange={setFilterGroupId}
+               />
                <SectionList<Expense, DaySection>
                   sections={sections}
                   keyExtractor={(item) => item.id}
@@ -218,6 +259,7 @@ export default function TrackScreen() {
                   renderItem={({ item }) => (
                      <SavedExpenseRow
                         expense={item}
+                        categories={categories}
                         onDelete={async () => {
                            await deleteExpense(db, item.id);
                            await loadExpenses();
@@ -235,6 +277,7 @@ export default function TrackScreen() {
                                  <JournalEntryRow
                                     key={row.id}
                                     row={row}
+                                    categories={categories}
                                     amountInputRef={
                                        refs.amount as React.RefObject<TextInput | null>
                                     }
@@ -300,6 +343,18 @@ const styles = StyleSheet.create({
       alignItems: "center",
       paddingHorizontal: Spacing.four,
       paddingVertical: Spacing.two,
+   },
+   headerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.three,
+   },
+   gearButton: {
+      justifyContent: "center",
+      alignItems: "center",
+      width: 32,
+      height: 32,
+      borderRadius: 16,
    },
    todayPill: {
       paddingHorizontal: Spacing.three,

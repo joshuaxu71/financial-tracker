@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { getCategoryById, getGroupColor } from "@/constants/categories";
+import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -12,6 +12,7 @@ import type { JournalEntryRow as JournalEntryRowType } from "./use-journal-entri
 
 type Props = {
    row: JournalEntryRowType;
+   categories: readonly Category[];
    amountInputRef: RefObject<TextInput | null>;
    descInputRef: RefObject<TextInput | null>;
    onAmountChange: (value: string) => void;
@@ -26,6 +27,7 @@ type Props = {
 
 export function JournalEntryRow({
    row,
+   categories,
    amountInputRef,
    descInputRef,
    onAmountChange,
@@ -39,8 +41,8 @@ export function JournalEntryRow({
 }: Props) {
    const theme = useTheme();
    const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-   const category = getCategoryById(row.category_id);
-   const dotColor = getGroupColor(row.category_id);
+   const category = categories.find((c) => c.id === row.category_id);
+   const dotColor = resolveCategoryColor(categories, row.category_id);
 
    function handleBackspace() {
       if (row.amount === "" && row.description === "") onDeleteRow();
@@ -88,6 +90,7 @@ export function JournalEntryRow({
          </TouchableOpacity>
          <InlineCategoryPicker
             visible={showCategoryPicker}
+            categories={categories}
             selectedCategoryId={row.category_id}
             onSelect={(id) => {
                onCategoryChange(id);
