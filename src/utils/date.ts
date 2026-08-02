@@ -44,3 +44,16 @@ export function prevMonth(year: number, month: number): { year: number; month: n
 export function nextMonth(year: number, month: number): { year: number; month: number } {
    return month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
 }
+
+export function shiftMonth(
+   year: number,
+   month: number,
+   delta: number,
+): { year: number; month: number } {
+   const total = year * 12 + (month - 1) + delta;
+   return { year: Math.floor(total / 12), month: (total % 12) + 1 };
+}
+
+export function formatMonthShort(year: number, month: number): string {
+   return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short" });
+}

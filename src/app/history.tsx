@@ -1,229 +1,390 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Alert, SectionList, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSQLiteContext } from 'expo-sqlite';
+import { useSQLiteContext } from "expo-sqlite";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { type DimensionValue, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { getCategoryById } from '@/constants/categories';
-import { BottomTabInset, Spacing } from '@/constants/theme';
-import { deleteExpense, getExpensesByMonth, type Expense } from '@/db/expenses';
-import { useTheme } from '@/hooks/use-theme';
-import { formatAmount } from '@/utils/currency';
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { resolveCategoryColor } from "@/constants/categories";
+import { BottomTabInset, Spacing } from "@/constants/theme";
 import {
-  currentYearMonth,
-  formatDisplayDate,
-  formatMonthYear,
-  nextMonth,
-  prevMonth,
-} from '@/utils/date';
+   type BudgetHistoryRow,
+   type CategoryRow,
+   getAllCategories,
+   getBudgetHistory,
+} from "@/db/categories";
+import { type Expense, getAllExpenses } from "@/db/expenses";
+import { budgetStateForWindow } from "@/features/budget/budget-calc";
+import { CategoryFilter } from "@/features/journal/category-filter";
+import { MonthPickerModal } from "@/features/journal/month-picker-modal";
+import { useTheme } from "@/hooks/use-theme";
+import { formatAmount } from "@/utils/currency";
+import { currentYearMonth, formatMonthShort, formatMonthYear, shiftMonth } from "@/utils/date";
 
-type DateSection = {
-  date: string;
-  total: number;
-  data: Expense[];
+type DashboardNode = {
+   category: CategoryRow;
+   depth: number;
+   children: DashboardNode[];
 };
 
-function groupByDate(expenses: Expense[]): DateSection[] {
-  const map = new Map<string, Expense[]>();
-  for (const expense of expenses) {
-    const group = map.get(expense.date) ?? [];
-    group.push(expense);
-    map.set(expense.date, group);
-  }
-  return Array.from(map.entries())
-    .sort(([a], [b]) => b.localeCompare(a))
-    .map(([date, data]) => ({
-      date,
-      total: data.reduce((sum, e) => sum + e.amount, 0),
-      data,
-    }));
+function buildTree(categories: CategoryRow[]): DashboardNode[] {
+   const byParent = new Map<number | null, CategoryRow[]>();
+   for (const c of categories) {
+      const list = byParent.get(c.parent_id) ?? [];
+      list.push(c);
+      byParent.set(c.parent_id, list);
+   }
+   function build(cats: CategoryRow[], depth: number): DashboardNode[] {
+      return cats.map((c) => ({
+         category: c,
+         depth,
+         children: build(byParent.get(c.id) ?? [], depth + 1),
+      }));
+   }
+   return build(byParent.get(null) ?? [], 0);
 }
 
-export default function HistoryScreen() {
-  const db = useSQLiteContext();
-  const theme = useTheme();
-  const { year: initYear, month: initMonth } = currentYearMonth();
+const WINDOW_OPTIONS = [1, 3, 6, 12] as const;
 
-  const [year, setYear] = useState(initYear);
-  const [month, setMonth] = useState(initMonth);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function DashboardScreen() {
+   const db = useSQLiteContext();
+   const theme = useTheme();
+   const { year: initYear, month: initMonth } = currentYearMonth();
 
-  const loadExpenses = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await getExpensesByMonth(db, year, month);
-      setExpenses(data);
-    } finally {
+   const [year, setYear] = useState(initYear);
+   const [month, setMonth] = useState(initMonth);
+   const [windowMonths, setWindowMonths] = useState<(typeof WINDOW_OPTIONS)[number]>(1);
+   const [filterGroupId, setFilterGroupId] = useState<number | null>(null);
+   const [categories, setCategories] = useState<CategoryRow[]>([]);
+   const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
+   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+   const [showMonthPicker, setShowMonthPicker] = useState(false);
+   const [isLoading, setIsLoading] = useState(true);
+
+   const load = useCallback(async () => {
+      const [c, e, h] = await Promise.all([
+         getAllCategories(db),
+         getAllExpenses(db),
+         getBudgetHistory(db),
+      ]);
+      setCategories(c);
+      setExpenses(e);
+      setHistory(h);
+      setExpanded(new Set(c.filter((cat) => cat.parent_id === null).map((cat) => cat.id)));
       setIsLoading(false);
-    }
-  }, [db, year, month]);
+   }, [db]);
 
-  useEffect(() => {
-    loadExpenses();
-  }, [loadExpenses]);
+   useEffect(() => {
+      load();
+   }, [load]);
 
-  function handleDeletePress(id: string) {
-    Alert.alert('Delete expense', 'Remove this entry?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteExpense(db, id);
-          loadExpenses();
-        },
-      },
-    ]);
-  }
+   const isCurrentMonth = year === initYear && month === initMonth;
 
-  function navigatePrev() {
-    const prev = prevMonth(year, month);
-    setYear(prev.year);
-    setMonth(prev.month);
-  }
+   const windowStart = shiftMonth(year, month, -(windowMonths - 1));
+   const windowStartDate = `${windowStart.year}-${String(windowStart.month).padStart(2, "0")}-01`;
+   const windowEndDate = `${year}-${String(month).padStart(2, "0")}-31`;
 
-  function navigateNext() {
-    const next = nextMonth(year, month);
-    setYear(next.year);
-    setMonth(next.month);
-  }
+   const windowLabel =
+      windowMonths === 1
+         ? formatMonthYear(year, month)
+         : `${formatMonthShort(windowStart.year, windowStart.month)} – ${formatMonthYear(year, month)}`;
 
-  const isCurrentMonth = year === initYear && month === initMonth;
-  const sections = groupByDate(expenses);
-  const monthTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+   const totalSpend = useMemo(() => {
+      let total = 0;
+      for (const e of expenses) {
+         if (e.date >= windowStartDate && e.date <= windowEndDate) total += e.amount;
+      }
+      return total;
+   }, [expenses, windowStartDate, windowEndDate]);
 
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <SectionList
-          sections={sections}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          stickySectionHeadersEnabled={false}
-          ListHeaderComponent={
-            <View style={styles.listHeader}>
-              <ThemedText type="subtitle">History</ThemedText>
+   const tree = useMemo(() => {
+      const roots = buildTree(categories);
+      return filterGroupId == null
+         ? roots
+         : roots.filter((node) => node.category.id === filterGroupId);
+   }, [categories, filterGroupId]);
 
-              <View style={styles.monthNav}>
-                <TouchableOpacity onPress={navigatePrev} style={styles.arrowButton}>
-                  <ThemedText themeColor="textSecondary">←</ThemedText>
-                </TouchableOpacity>
+   function navigatePrev() {
+      const prev = shiftMonth(year, month, -1);
+      setYear(prev.year);
+      setMonth(prev.month);
+   }
 
-                <View style={styles.monthInfo}>
-                  <ThemedText type="smallBold">{formatMonthYear(year, month)}</ThemedText>
-                  {!isLoading && expenses.length > 0 && (
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {formatAmount(monthTotal)} total
-                    </ThemedText>
+   function navigateNext() {
+      if (isCurrentMonth) return;
+      const next = shiftMonth(year, month, 1);
+      setYear(next.year);
+      setMonth(next.month);
+   }
+
+   function handleSelectMonth(y: number, m: number) {
+      setYear(y);
+      setMonth(m);
+      setShowMonthPicker(false);
+   }
+
+   function toggleExpand(id: number) {
+      setExpanded((prev) => {
+         const next = new Set(prev);
+         if (next.has(id)) next.delete(id);
+         else next.add(id);
+         return next;
+      });
+   }
+
+   function renderNode(node: DashboardNode) {
+      const state = budgetStateForWindow(
+         categories,
+         expenses,
+         history,
+         node.category.id,
+         year,
+         month,
+         windowMonths,
+      );
+      const spent = state.spent;
+      const available = state.available;
+      const hasBudget = node.category.budget != null;
+      const pct = hasBudget && available > 0 ? (spent / available) * 100 : 0;
+      const isOver = hasBudget && available > 0 && spent > available;
+      const dotColor = resolveCategoryColor(categories, node.category.id);
+      const hasChildren = node.children.length > 0;
+      const isOpen = expanded.has(node.category.id);
+
+      return (
+         <View key={node.category.id}>
+            <TouchableOpacity
+               activeOpacity={0.7}
+               onPress={() => hasChildren && toggleExpand(node.category.id)}
+               style={[styles.nodeRow, { paddingLeft: node.depth * Spacing.four }]}
+            >
+               <ThemedText type="small" themeColor="textSecondary" style={styles.chevron}>
+                  {hasChildren ? (isOpen ? "▾" : "▸") : " "}
+               </ThemedText>
+               <View style={[styles.dot, { backgroundColor: dotColor }]} />
+               <ThemedText type="smallBold" numberOfLines={1} style={styles.nodeName}>
+                  {node.category.name}
+               </ThemedText>
+               <ThemedText type="smallBold">{formatAmount(spent)}</ThemedText>
+            </TouchableOpacity>
+
+            {hasBudget && (
+               <View style={[styles.budgetRow, { paddingLeft: node.depth * Spacing.four }]}>
+                  <View
+                     style={[
+                        styles.progressTrack,
+                        { marginLeft: Spacing.four, backgroundColor: theme.backgroundSelected },
+                     ]}
+                  >
+                     <View
+                        style={[
+                           styles.progressFill,
+                           {
+                              width: `${Math.min(pct, 100).toFixed(1)}%` as DimensionValue,
+                              backgroundColor: isOver ? "#ef4444" : dotColor,
+                           },
+                        ]}
+                     />
+                  </View>
+                  <ThemedText type="small" themeColor={isOver ? "text" : "textSecondary"}>
+                     {formatAmount(spent)} / {formatAmount(available)}
+                  </ThemedText>
+               </View>
+            )}
+
+            {hasChildren &&
+               isOpen &&
+               node.children.map((child) => (
+                  <View key={child.category.id}>{renderNode(child)}</View>
+               ))}
+         </View>
+      );
+   }
+
+   return (
+      <ThemedView style={styles.container}>
+         <SafeAreaView style={styles.safeArea} edges={["top"]}>
+            <ScrollView contentContainerStyle={styles.scrollContent}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle">Dashboard</ThemedText>
+               </View>
+
+               <View style={styles.monthNav}>
+                  <TouchableOpacity onPress={navigatePrev} style={styles.arrowButton}>
+                     <ThemedText themeColor="textSecondary">←</ThemedText>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
+                     <ThemedText type="smallBold">{formatMonthYear(year, month)} ▾</ThemedText>
+                  </TouchableOpacity>
+
+                  {!isCurrentMonth ? (
+                     <TouchableOpacity
+                        onPress={() => {
+                           setYear(initYear);
+                           setMonth(initMonth);
+                        }}
+                        style={styles.todayPill}
+                     >
+                        <ThemedText type="small" themeColor="textSecondary">
+                           Today
+                        </ThemedText>
+                     </TouchableOpacity>
+                  ) : (
+                     <TouchableOpacity onPress={navigateNext} style={styles.arrowButton}>
+                        <ThemedText
+                           themeColor={isCurrentMonth ? "backgroundElement" : "textSecondary"}
+                        >
+                           →
+                        </ThemedText>
+                     </TouchableOpacity>
                   )}
-                </View>
+               </View>
 
-                <TouchableOpacity
-                  onPress={navigateNext}
-                  disabled={isCurrentMonth}
-                  style={styles.arrowButton}>
-                  <ThemedText themeColor={isCurrentMonth ? 'backgroundElement' : 'textSecondary'}>
-                    →
-                  </ThemedText>
-                </TouchableOpacity>
-              </View>
-            </View>
-          }
-          ListEmptyComponent={
-            <ThemedText themeColor="textSecondary" style={styles.emptyText}>
-              {isLoading ? 'Loading…' : 'No expenses this month.'}
-            </ThemedText>
-          }
-          renderSectionHeader={({ section }) => (
-            <View
-              style={[styles.sectionHeader, { borderBottomColor: theme.backgroundElement }]}>
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatDisplayDate(section.date)}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatAmount(section.total)}
-              </ThemedText>
-            </View>
-          )}
-          renderItem={({ item }) => {
-            const category = getCategoryById(item.category_id);
-            return (
-              <TouchableOpacity
-                onLongPress={() => handleDeletePress(item.id)}
-                activeOpacity={0.7}
-                style={styles.expenseRow}>
-                <ThemedView type="backgroundElement" style={styles.categoryChip}>
+               <View style={styles.rangeToggle}>
+                  {WINDOW_OPTIONS.map((n) => {
+                     const selected = n === windowMonths;
+                     return (
+                        <TouchableOpacity
+                           key={n}
+                           style={[
+                              styles.rangeChip,
+                              { backgroundColor: selected ? theme.text : theme.backgroundElement },
+                           ]}
+                           onPress={() => setWindowMonths(n)}
+                        >
+                           <ThemedText
+                              type="smallBold"
+                              style={{ color: selected ? theme.background : theme.text }}
+                           >
+                              {n}m
+                           </ThemedText>
+                        </TouchableOpacity>
+                     );
+                  })}
+               </View>
+
+               <CategoryFilter
+                  categories={categories}
+                  selectedGroupId={filterGroupId}
+                  onChange={setFilterGroupId}
+               />
+
+               <ThemedView type="backgroundElement" style={styles.summaryCard}>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {category?.name ?? '—'}
+                     {windowLabel}
                   </ThemedText>
-                </ThemedView>
-                <ThemedText style={styles.description} numberOfLines={1}>
-                  {item.description || '—'}
-                </ThemedText>
-                <ThemedText type="smallBold">{formatAmount(item.amount)}</ThemedText>
-              </TouchableOpacity>
-            );
-          }}
-        />
-      </SafeAreaView>
-    </ThemedView>
-  );
+                  <ThemedText type="subtitle">{formatAmount(totalSpend)}</ThemedText>
+                  <ThemedText type="small" themeColor="textSecondary">
+                     total spent
+                  </ThemedText>
+               </ThemedView>
+
+               {isLoading ? (
+                  <ThemedText themeColor="textSecondary" style={styles.emptyText}>
+                     Loading…
+                  </ThemedText>
+               ) : (
+                  tree.map((node) => renderNode(node))
+               )}
+            </ScrollView>
+         </SafeAreaView>
+
+         <MonthPickerModal
+            visible={showMonthPicker}
+            year={year}
+            month={month}
+            maxYear={initYear}
+            maxMonth={initMonth}
+            onSelect={handleSelectMonth}
+            onDismiss={() => setShowMonthPicker(false)}
+         />
+      </ThemedView>
+   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  safeArea: { flex: 1 },
-  listContent: {
-    paddingBottom: BottomTabInset + Spacing.four,
-  },
-  listHeader: {
-    gap: Spacing.three,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.three,
-  },
-  monthNav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  arrowButton: {
-    padding: Spacing.two,
-  },
-  monthInfo: {
-    alignItems: 'center',
-    gap: Spacing.half,
-  },
-  emptyText: {
-    textAlign: 'center',
-    paddingTop: Spacing.six,
-    paddingHorizontal: Spacing.four,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderBottomWidth: 1,
-  },
-  expenseRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    gap: Spacing.two,
-  },
-  categoryChip: {
-    paddingVertical: 2,
-    paddingHorizontal: Spacing.two,
-    borderRadius: Spacing.two,
-  },
-  description: {
-    flex: 1,
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '500',
-  },
+   container: { flex: 1 },
+   safeArea: { flex: 1 },
+   scrollContent: {
+      gap: Spacing.three,
+      paddingTop: Spacing.three,
+      paddingBottom: BottomTabInset + Spacing.four,
+      paddingHorizontal: Spacing.four,
+   },
+   header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+   },
+   monthNav: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+   },
+   arrowButton: {
+      padding: Spacing.two,
+   },
+   todayPill: {
+      paddingHorizontal: Spacing.two,
+      paddingVertical: Spacing.half,
+      borderWidth: 1,
+      borderRadius: 100,
+      borderColor: "#2E3135",
+   },
+   rangeToggle: {
+      flexDirection: "row",
+      gap: Spacing.two,
+   },
+   rangeChip: {
+      alignItems: "center",
+      flex: 1,
+      paddingVertical: Spacing.one,
+      borderRadius: 100,
+   },
+   summaryCard: {
+      alignItems: "center",
+      gap: Spacing.one,
+      padding: Spacing.four,
+      borderRadius: Spacing.three,
+   },
+   emptyText: {
+      paddingTop: Spacing.six,
+      textAlign: "center",
+   },
+   nodeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.two,
+      paddingVertical: Spacing.two,
+   },
+   chevron: {
+      width: Spacing.three,
+      textAlign: "center",
+   },
+   dot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+   },
+   nodeName: {
+      flex: 1,
+   },
+   budgetRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.two,
+      paddingBottom: Spacing.two,
+   },
+   progressTrack: {
+      flex: 1,
+      height: 6,
+      borderRadius: 3,
+      overflow: "hidden",
+   },
+   progressFill: {
+      height: "100%",
+      borderRadius: 3,
+   },
 });
