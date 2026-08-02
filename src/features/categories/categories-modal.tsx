@@ -17,14 +17,18 @@ import { resolveCategoryColor } from "@/constants/categories";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import {
+   type BudgetHistoryRow,
    type CategoryRow,
    deleteCategory,
    getAllCategories,
-   getCategorySpendingByMonth,
+   getBudgetHistory,
    getCategoryUsage,
    insertCategory,
+   resetBudgetAccumulation,
    updateCategory,
 } from "@/db/categories";
+import { type Expense, getAllExpenses } from "@/db/expenses";
+import { type BudgetState, budgetStateForMonth } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 
@@ -84,7 +88,8 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [usage, setUsage] = useState<Map<number, number>>(new Map());
-   const [spending, setSpending] = useState<Map<number, number>>(new Map());
+   const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
    const [expanded, setExpanded] = useState<Set<number>>(new Set());
    const [editor, setEditor] = useState<{
       mode: "new" | "edit";
@@ -101,9 +106,10 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const cats = await getAllCategories(db);
       setCategories(cats);
       setUsage(await getCategoryUsage(db));
-      setSpending(await getCategorySpendingByMonth(db, year, month));
+      setExpenses(await getAllExpenses(db));
+      setHistory(await getBudgetHistory(db));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
-   }, [db, year, month]);
+   }, [db]);
 
    const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -236,6 +242,26 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       onChanged();
    }
 
+   function confirmResetBudget() {
+      if (!editor || editor.id == null) return;
+      Alert.alert(
+         "Reset budget accumulation",
+         `Discard carried-over budget for "${editor.name}" and start fresh from this month?`,
+         [
+            { text: "Cancel", style: "cancel" },
+            {
+               text: "Reset",
+               style: "destructive",
+               onPress: async () => {
+                  await resetBudgetAccumulation(db, editor.id!);
+                  await load();
+                  onChanged();
+               },
+            },
+         ],
+      );
+   }
+
    const reassignTargets = useMemo(() => {
       if (!editor?.id) return categories;
       const excluded = new Set<number>([editor.id]);
@@ -247,10 +273,9 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       ? (categories.find((c) => c.id === editor.parentId)?.name ?? "None (top level)")
       : "";
 
-   function nodeSpent(node: TreeNode): number {
-      let total = spending.get(node.category.id) ?? 0;
-      for (const child of node.children) total += nodeSpent(child);
-      return total;
+   function nodeBudget(node: TreeNode): BudgetState | null {
+      if (node.category.budget == null) return null;
+      return budgetStateForMonth(categories, expenses, history, node.category.id, year, month);
    }
 
    function renderNode(node: TreeNode) {
@@ -259,10 +284,11 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const dotColor = resolveCategoryColor(categories, node.category.id);
       const count = usage.get(node.category.id) ?? 0;
       const isTopLevel = node.category.parent_id === null;
-      const budget = node.category.budget;
-      const spent = nodeSpent(node);
-      const pct = budget != null && budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
-      const isOver = budget != null && budget > 0 && spent > budget;
+      const budget = nodeBudget(node);
+      const spent = budget?.spent ?? 0;
+      const available = budget?.available ?? 0;
+      const pct = available > 0 ? Math.min((spent / available) * 100, 100) : 0;
+      const isOver = available > 0 && spent > available;
 
       return (
          <View key={node.category.id}>
@@ -298,7 +324,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            themeColor={isOver ? "text" : "textSecondary"}
                            style={styles.budgetText}
                         >
-                           {formatAmount(spent)} / {formatAmount(budget)}
+                           {formatAmount(spent)} / {formatAmount(available)}
                         </ThemedText>
                         <View
                            style={[
@@ -450,6 +476,18 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            ? "Group budget. If all sub-categories set one, they must equal this."
                            : "Sub-category budget. Unset ones share the group's remainder."}
                      </ThemedText>
+                     {editor.mode === "edit" &&
+                        editor.id != null &&
+                        categories.find((c) => c.id === editor.id)?.budget != null && (
+                           <TouchableOpacity
+                              onPress={confirmResetBudget}
+                              style={styles.resetButton}
+                           >
+                              <ThemedText type="small" style={styles.resetText}>
+                                 Reset accumulation
+                              </ThemedText>
+                           </TouchableOpacity>
+                        )}
 
                      <View style={styles.sheetActions}>
                         {editor.mode === "edit" && (
@@ -656,6 +694,11 @@ const styles = StyleSheet.create({
       marginBottom: Spacing.one,
       fontSize: 11,
    },
+   resetButton: {
+      alignSelf: "flex-start",
+      paddingVertical: Spacing.two,
+   },
+   resetText: { color: "#FF453A" },
    label: {
       marginTop: Spacing.two,
       fontSize: 12,

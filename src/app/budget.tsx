@@ -7,8 +7,14 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { resolveCategoryColor } from "@/constants/categories";
 import { BottomTabInset, Spacing } from "@/constants/theme";
-import { type CategoryRow, getAllCategories } from "@/db/categories";
-import { type Expense, getExpensesByMonth } from "@/db/expenses";
+import {
+   type BudgetHistoryRow,
+   type CategoryRow,
+   getAllCategories,
+   getBudgetHistory,
+} from "@/db/categories";
+import { type Expense, getAllExpenses } from "@/db/expenses";
+import { budgetStateForMonth } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 import { currentYearMonth, formatMonthYear } from "@/utils/date";
@@ -43,33 +49,39 @@ export default function BudgetScreen() {
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
    const [isLoading, setIsLoading] = useState(true);
 
    const load = useCallback(async () => {
-      const [c, e] = await Promise.all([getAllCategories(db), getExpensesByMonth(db, year, month)]);
+      const [c, e, h] = await Promise.all([
+         getAllCategories(db),
+         getAllExpenses(db),
+         getBudgetHistory(db),
+      ]);
       setCategories(c);
       setExpenses(e);
+      setHistory(h);
       setIsLoading(false);
-   }, [db, year, month]);
+   }, [db]);
 
    useEffect(() => {
       load();
    }, [load]);
 
-   function nodeSpent(node: BudgetNode): number {
-      let total = expenses
-         .filter((e) => e.category_id === node.category.id)
-         .reduce((s, e) => s + e.amount, 0);
-      for (const child of node.children) total += nodeSpent(child);
-      return total;
-   }
-
    function renderNode(node: BudgetNode) {
-      const budget = node.category.budget;
-      if (budget == null) return null;
-      const spent = nodeSpent(node);
-      const pct = budget > 0 ? (spent / budget) * 100 : 0;
-      const isOver = spent > budget;
+      if (node.category.budget == null) return null;
+      const state = budgetStateForMonth(
+         categories,
+         expenses,
+         history,
+         node.category.id,
+         year,
+         month,
+      );
+      const spent = state.spent;
+      const available = state.available;
+      const pct = available > 0 ? (spent / available) * 100 : 0;
+      const isOver = available > 0 && spent > available;
       const dotColor = resolveCategoryColor(categories, node.category.id);
 
       return (
@@ -84,7 +96,7 @@ export default function BudgetScreen() {
                      <ThemedText type="smallBold">{node.category.name}</ThemedText>
                   </View>
                   <ThemedText type="small" themeColor="textSecondary">
-                     {formatAmount(spent)} / {formatAmount(budget)}
+                     {formatAmount(spent)} / {formatAmount(available)}
                   </ThemedText>
                </View>
 
@@ -112,7 +124,7 @@ export default function BudgetScreen() {
    const monthLabel = formatMonthYear(year, month);
    const totalSpend = expenses.reduce((sum, e) => sum + e.amount, 0);
    const tree = buildTree(categories);
-   const hasBudgets = tree.some((n) => n.category.budget != null);
+   const hasBudgets = categories.some((c) => c.budget != null);
 
    return (
       <ThemedView style={styles.container}>

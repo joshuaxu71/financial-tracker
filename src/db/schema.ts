@@ -102,4 +102,30 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
          await db.execAsync("PRAGMA user_version = 2");
       });
    }
+
+   if (v < 3) {
+      await db.withTransactionAsync(async () => {
+         await db.execAsync("ALTER TABLE categories ADD COLUMN budget_start TEXT");
+         await db.execAsync("PRAGMA user_version = 3");
+      });
+   }
+
+   if (v < 4) {
+      await db.withTransactionAsync(async () => {
+         await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS budget_history (
+               category_id INTEGER NOT NULL,
+               month TEXT NOT NULL,
+               allocation REAL NOT NULL,
+               PRIMARY KEY (category_id, month)
+            )
+         `);
+         await db.execAsync(`
+            INSERT OR IGNORE INTO budget_history (category_id, month, allocation)
+            SELECT id, substr(COALESCE(budget_start, date('now')), 1, 7), budget
+            FROM categories WHERE budget IS NOT NULL
+         `);
+         await db.execAsync("PRAGMA user_version = 4");
+      });
+   }
 }

@@ -53,6 +53,10 @@ export async function getExpensesByMonth(
    );
 }
 
+export async function getAllExpenses(db: SQLiteDatabase): Promise<Expense[]> {
+   return db.getAllAsync<Expense>("SELECT * FROM expenses");
+}
+
 export async function deleteExpense(db: SQLiteDatabase, id: string): Promise<void> {
    await db.runAsync("DELETE FROM expenses WHERE id = ?", id);
 }
