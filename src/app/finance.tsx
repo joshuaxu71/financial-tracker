@@ -16,8 +16,10 @@ import {
    getAllIncome,
    getAllSources,
 } from "@/db/sources";
+import { type TransferRow, deleteTransfer, getAllTransfers } from "@/db/transfers";
 import { IncomeModal } from "@/features/finance/income-modal";
 import { SourcesModal } from "@/features/finance/sources-modal";
+import { TransferModal } from "@/features/finance/transfer-modal";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 import { formatDisplayDate } from "@/utils/date";
@@ -29,20 +31,24 @@ export default function FinanceScreen() {
    const [sources, setSources] = useState<SourceRow[]>([]);
    const [income, setIncome] = useState<IncomeRow[]>([]);
    const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [transfers, setTransfers] = useState<TransferRow[]>([]);
    const [rates, setRates] = useState<Map<string, number>>(new Map());
    const [showSources, setShowSources] = useState(false);
    const [incomeSource, setIncomeSource] = useState<SourceRow | null>(null);
+   const [transferFromSource, setTransferFromSource] = useState<SourceRow | null>(null);
 
    const load = useCallback(async () => {
-      const [s, i, e, r] = await Promise.all([
+      const [s, i, e, t, r] = await Promise.all([
          getAllSources(db),
          getAllIncome(db),
          getAllExpenses(db),
+         getAllTransfers(db),
          getRates(db),
       ]);
       setSources(s);
       setIncome(i);
       setExpenses(e);
+      setTransfers(t);
       setRates(r);
    }, [db]);
 
@@ -56,8 +62,12 @@ export default function FinanceScreen() {
       for (const s of sources) map.set(s.id, s.opening_balance);
       for (const inc of income) map.set(inc.source_id, (map.get(inc.source_id) ?? 0) + inc.amount);
       for (const e of expenses) map.set(e.source_id, (map.get(e.source_id) ?? 0) - e.amount);
+      for (const t of transfers) {
+         map.set(t.from_source_id, (map.get(t.from_source_id) ?? 0) - t.from_amount);
+         map.set(t.to_source_id, (map.get(t.to_source_id) ?? 0) + t.to_amount);
+      }
       return map;
-   }, [sources, income, expenses]);
+   }, [sources, income, expenses, transfers]);
 
    const netWorth = useMemo(() => {
       let total = 0;
@@ -79,6 +89,28 @@ export default function FinanceScreen() {
          [
             { text: "Cancel", style: "cancel" },
             { text: "Delete", style: "destructive", onPress: () => handleDeleteIncome(entry.id) },
+         ],
+      );
+   }
+
+   async function handleDeleteTransfer(id: string) {
+      await deleteTransfer(db, id);
+      await load();
+   }
+
+   function confirmDeleteTransfer(t: TransferRow) {
+      const fromSource = sources.find((s) => s.id === t.from_source_id);
+      const toSource = sources.find((s) => s.id === t.to_source_id);
+      Alert.alert(
+         "Delete transfer",
+         `Delete transfer of ${formatCurrencyAmount(t.from_amount, fromSource?.currency ?? "")} → ${formatCurrencyAmount(t.to_amount, toSource?.currency ?? "")}?`,
+         [
+            { text: "Cancel", style: "cancel" },
+            {
+               text: "Delete",
+               style: "destructive",
+               onPress: () => handleDeleteTransfer(t.id),
+            },
          ],
       );
    }
@@ -126,6 +158,9 @@ export default function FinanceScreen() {
                      const bal = balance.get(s.id) ?? 0;
                      const jpy = convertToJpy(bal, s.currency, rates);
                      const entries = income.filter((i) => i.source_id === s.id);
+                     const sourceTransfers = transfers.filter(
+                        (t) => t.from_source_id === s.id || t.to_source_id === s.id,
+                     );
                      return (
                         <ThemedView key={s.id} type="backgroundElement" style={styles.sourceCard}>
                            <View style={styles.sourceHeader}>
@@ -171,12 +206,56 @@ export default function FinanceScreen() {
                               </View>
                            )}
 
-                           <TouchableOpacity
-                              style={styles.addMoney}
-                              onPress={() => setIncomeSource(s)}
-                           >
-                              <ThemedText type="smallBold">+ Add money</ThemedText>
-                           </TouchableOpacity>
+                           {sourceTransfers.length > 0 && (
+                              <View style={styles.incomeList}>
+                                 {sourceTransfers.map((t) => {
+                                    const isOut = t.from_source_id === s.id;
+                                    const counterpart = sources.find(
+                                       (x) => x.id === (isOut ? t.to_source_id : t.from_source_id),
+                                    );
+                                    const amount = isOut ? t.from_amount : t.to_amount;
+                                    return (
+                                       <TouchableOpacity
+                                          key={t.id}
+                                          style={styles.incomeRow}
+                                          onLongPress={() => confirmDeleteTransfer(t)}
+                                       >
+                                          <View style={styles.transferLeft}>
+                                             <ThemedText type="small" themeColor="textSecondary">
+                                                {formatDisplayDate(t.date)}
+                                             </ThemedText>
+                                             <ThemedText type="small" themeColor="textSecondary">
+                                                {isOut
+                                                   ? `→ ${counterpart?.name ?? "?"}`
+                                                   : `← ${counterpart?.name ?? "?"}`}
+                                             </ThemedText>
+                                          </View>
+                                          <ThemedText
+                                             type="small"
+                                             style={[
+                                                styles.incomeAmount,
+                                                { color: isOut ? theme.textSecondary : undefined },
+                                             ]}
+                                          >
+                                             {isOut ? "- " : "+ "}
+                                             {formatCurrencyAmount(amount, s.currency)}
+                                          </ThemedText>
+                                       </TouchableOpacity>
+                                    );
+                                 })}
+                              </View>
+                           )}
+
+                           <View style={styles.cardActions}>
+                              <TouchableOpacity onPress={() => setIncomeSource(s)}>
+                                 <ThemedText type="smallBold">+ Add money</ThemedText>
+                              </TouchableOpacity>
+                              {sources.length >= 2 && (
+                                 <TouchableOpacity onPress={() => setTransferFromSource(s)}>
+                                    <ThemedText type="smallBold">→ Transfer</ThemedText>
+                                 </TouchableOpacity>
+                              )}
+                           </View>
                         </ThemedView>
                      );
                   })
@@ -193,6 +272,13 @@ export default function FinanceScreen() {
             visible={incomeSource != null}
             source={incomeSource}
             onDismiss={() => setIncomeSource(null)}
+            onChanged={load}
+         />
+         <TransferModal
+            visible={transferFromSource != null}
+            fromSource={transferFromSource}
+            sources={sources}
+            onDismiss={() => setTransferFromSource(null)}
             onChanged={load}
          />
       </ThemedView>
@@ -275,8 +361,11 @@ const styles = StyleSheet.create({
    incomeAmount: {
       fontVariant: ["tabular-nums"],
    },
-   addMoney: {
-      alignSelf: "flex-start",
-      paddingVertical: Spacing.one,
+   transferLeft: {
+      gap: Spacing.half,
+   },
+   cardActions: {
+      flexDirection: "row",
+      gap: Spacing.four,
    },
 });

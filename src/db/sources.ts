@@ -97,6 +97,11 @@ export async function deleteSource(
          );
       }
       await db.runAsync("DELETE FROM income_entries WHERE source_id = ?", id);
+      await db.runAsync(
+         "DELETE FROM transfers WHERE from_source_id = ? OR to_source_id = ?",
+         id,
+         id,
+      );
       await db.runAsync("DELETE FROM sources WHERE id = ?", id);
    });
 }

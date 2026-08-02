@@ -172,4 +172,23 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
          await db.execAsync("PRAGMA user_version = 5");
       });
    }
+
+   if (v < 6) {
+      await db.withTransactionAsync(async () => {
+         await db.execAsync(`
+            CREATE TABLE IF NOT EXISTS transfers (
+               id TEXT PRIMARY KEY,
+               from_source_id INTEGER NOT NULL REFERENCES sources(id),
+               to_source_id INTEGER NOT NULL REFERENCES sources(id),
+               from_amount REAL NOT NULL,
+               to_amount REAL NOT NULL,
+               exchange_rate REAL NOT NULL DEFAULT 1,
+               date TEXT NOT NULL,
+               description TEXT NOT NULL DEFAULT '',
+               created_at TEXT NOT NULL
+            )
+         `);
+         await db.execAsync("PRAGMA user_version = 6");
+      });
+   }
 }
