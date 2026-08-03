@@ -1,25 +1,31 @@
-import { type SQLiteDatabase } from "expo-sqlite";
+import type { AbstractPowerSyncDatabase } from "@powersync/react-native";
 
 import { BASE_CURRENCY } from "@/constants/currencies";
+import { makeUuid } from "@/utils/id";
 
-export type RateRow = { currency: string; rate: number; updated_at: string };
+export type RateRow = { id: string; currency: string; rate: number; updated_at: string };
 
-export async function getRates(db: SQLiteDatabase): Promise<Map<string, number>> {
-   const rows = await db.getAllAsync<RateRow>(
-      "SELECT currency, rate, updated_at FROM exchange_rates",
+export async function getRates(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
+   const rows = await db.getAll<RateRow>(
+      "SELECT id, currency, rate, updated_at FROM exchange_rates",
    );
    return new Map(rows.map((r) => [r.currency, r.rate]));
 }
 
-async function upsertRates(db: SQLiteDatabase, rates: Record<string, number>): Promise<void> {
+async function upsertRates(
+   db: AbstractPowerSyncDatabase,
+   rates: Record<string, number>,
+): Promise<void> {
    const now = new Date().toISOString();
    for (const [currency, rate] of Object.entries(rates)) {
       if (!Number.isFinite(rate) || rate <= 0) continue;
-      await db.runAsync(
-         "INSERT INTO exchange_rates (currency, rate, updated_at) VALUES (?, ?, ?) ON CONFLICT(currency) DO UPDATE SET rate = excluded.rate, updated_at = excluded.updated_at",
-         currency,
-         rate,
-         now,
+      const existing = await db.getOptional<{ id: string }>(
+         "SELECT id FROM exchange_rates WHERE currency = ?",
+         [currency],
+      );
+      await db.execute(
+         "INSERT INTO exchange_rates (id, currency, rate, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET rate = excluded.rate, updated_at = excluded.updated_at",
+         [existing?.id ?? makeUuid(), currency, rate, now],
       );
    }
 }
@@ -29,7 +35,7 @@ async function upsertRates(db: SQLiteDatabase, rates: Record<string, number>): P
  * Falls back to cached rates (or an empty map) when offline.
  * Stored rate = how many JPY one unit of the foreign currency is worth.
  */
-export async function refreshRates(db: SQLiteDatabase): Promise<Map<string, number>> {
+export async function refreshRates(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
    try {
       const res = await fetch(`https://api.frankfurter.app/latest?from=${BASE_CURRENCY}`);
       if (!res.ok) throw new Error(`rate fetch failed: ${res.status}`);

@@ -1,14 +1,11 @@
 import { useCallback, useState } from "react";
 
-const DEFAULT_CATEGORY_ID = 2; // Food
-const DEFAULT_SOURCE_ID = 1; // Cash
-
 export type JournalEntryRow = {
    id: string;
    amount: string;
    description: string;
-   category_id: number;
-   source_id: number;
+   category_id: string;
+   source_id: string;
 };
 
 export type ActiveEntryCell = {
@@ -25,10 +22,7 @@ function makeRowId() {
    return `jr-${rowIdCounter}`;
 }
 
-function makeEmptyRow(
-   categoryId = DEFAULT_CATEGORY_ID,
-   sourceId = DEFAULT_SOURCE_ID,
-): JournalEntryRow {
+function makeEmptyRow(categoryId: string, sourceId: string): JournalEntryRow {
    return {
       id: makeRowId(),
       amount: "",
@@ -45,22 +39,25 @@ function isRowEmpty(row: JournalEntryRow) {
 function withTrailingBlank(rows: JournalEntryRow[]): JournalEntryRow[] {
    const last = rows[rows.length - 1];
    if (!last || !isRowEmpty(last)) {
-      return [...rows, makeEmptyRow(last?.category_id, last?.source_id)];
+      return [...rows, makeEmptyRow(last?.category_id ?? "", last?.source_id ?? "")];
    }
    return rows;
 }
 
-export function useJournalEntries() {
+export function useJournalEntries(defaultCategoryId: string, defaultSourceId: string) {
    const [rowsByDate, setRowsByDate] = useState<RowsMap>({});
    const [activeCell, setActiveCell] = useState<ActiveEntryCell>(null);
-   const [lastSourceId, setLastSourceId] = useState(DEFAULT_SOURCE_ID);
+   const [lastSourceId, setLastSourceId] = useState(defaultSourceId);
 
-   const ensureDayRows = useCallback((date: string) => {
-      setRowsByDate((prev) => {
-         if (prev[date]) return prev;
-         return { ...prev, [date]: [makeEmptyRow()] };
-      });
-   }, []);
+   const ensureDayRows = useCallback(
+      (date: string) => {
+         setRowsByDate((prev) => {
+            if (prev[date]) return prev;
+            return { ...prev, [date]: [makeEmptyRow(defaultCategoryId, defaultSourceId)] };
+         });
+      },
+      [defaultCategoryId, defaultSourceId],
+   );
 
    const updateRow = useCallback(
       (
@@ -70,7 +67,7 @@ export function useJournalEntries() {
          value: string | number,
       ) => {
          setRowsByDate((prev) => {
-            const rows = prev[date] ?? [makeEmptyRow()];
+            const rows = prev[date] ?? [makeEmptyRow(defaultCategoryId, defaultSourceId)];
             const updated = rows.map((r) => (r.id === rowId ? { ...r, [field]: value } : r));
             return {
                ...prev,
@@ -81,15 +78,24 @@ export function useJournalEntries() {
             };
          });
       },
-      [],
+      [defaultCategoryId, defaultSourceId],
    );
 
-   const removeRow = useCallback((date: string, rowId: string) => {
-      setRowsByDate((prev) => {
-         const rows = (prev[date] ?? []).filter((r) => r.id !== rowId);
-         return { ...prev, [date]: rows.length > 0 ? withTrailingBlank(rows) : [makeEmptyRow()] };
-      });
-   }, []);
+   const removeRow = useCallback(
+      (date: string, rowId: string) => {
+         setRowsByDate((prev) => {
+            const rows = (prev[date] ?? []).filter((r) => r.id !== rowId);
+            return {
+               ...prev,
+               [date]:
+                  rows.length > 0
+                     ? withTrailingBlank(rows)
+                     : [makeEmptyRow(defaultCategoryId, defaultSourceId)],
+            };
+         });
+      },
+      [defaultCategoryId, defaultSourceId],
+   );
 
    const advance = useCallback((date: string, rowId: string, field: "amount" | "description") => {
       setRowsByDate((snapshot) => {

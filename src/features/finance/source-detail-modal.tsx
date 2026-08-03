@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -38,7 +38,7 @@ export function SourceDetailModal({
    onDismiss,
    onChanged,
 }: Props) {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
    const [showIncome, setShowIncome] = useState(false);
    const [showTransfer, setShowTransfer] = useState(false);

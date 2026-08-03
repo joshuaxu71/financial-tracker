@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html data-theme="luxury" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SQLite → Cloud Sync Migration Plan</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :where(.grid, .flex, .layout-grid, .layout-flex) > *,
+    :where([style*="display: grid"], [style*="display:grid"], [style*="display: flex"], [style*="display:flex"]) > * {
+      min-width: 0;
+    }
+    :where(p, h1, h2, h3, h4, h5, h6, li, dd, blockquote, figcaption, td, th, .badge, .label) {
+      overflow-wrap: anywhere;
+    }
+    :where(img, svg, video, canvas, iframe) {
+      max-width: 100%;
+      height: auto;
+    }
+    .accent { color: #6978D7; }
+    .accent-green { color: #3EB27C; }
+    .accent-purple { color: #9071D7; }
+    .mermaid { display: flex; justify-content: center; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.82em; }
+    .bump { background: #2E3135; border-radius: 8px; padding: 2px 6px; font-family: ui-monospace, Menlo, monospace; font-size: 0.8em; }
+  </style>
+</head>
+<body class="min-h-screen bg-base-200 p-4 md:p-8">
+
+  <div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- ════════ Header ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="badge badge-soft badge-info badge-sm">Proposal</span>
+          <span class="badge badge-soft badge-neutral badge-sm">Phase: review before build</span>
+        </div>
+        <h1 class="card-title text-2xl md:text-3xl">SQLite → Cloud Sync Migration</h1>
+        <p class="text-sm text-base-content/70 mt-1 max-w-3xl">
+          Add phone ⇄ web sync to the expense tracker. Today it's a local-only <span class="bump">expo-sqlite</span>
+          database (9 tables, migration v6) on iOS / Android / Web. The proposal: keep SQLite as the offline-first
+          local engine and sync it to a managed Postgres backend so a single user's data is consistent across all
+          three platforms.
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+          <div class="rounded-xl bg-base-200 p-3">
+            <div class="text-xs text-base-content/50 uppercase tracking-wide">Current</div>
+            <div class="text-sm font-semibold mt-1">Local-only SQLite</div>
+          </div>
+          <div class="rounded-xl bg-base-200 p-3">
+            <div class="text-xs text-base-content/50 uppercase tracking-wide">Target</div>
+            <div class="text-sm font-semibold mt-1">Offline-first cloud sync</div>
+          </div>
+          <div class="rounded-xl bg-base-200 p-3">
+            <div class="text-xs text-base-content/50 uppercase tracking-wide">Stack</div>
+            <div class="text-sm font-semibold mt-1">Expo · iOS · Android · Web</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ Architecture ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <h2 class="card-title text-xl mb-1">Proposed architecture</h2>
+        <p class="text-sm text-base-content/60 mb-4">
+          <b class="accent">PowerSync</b> sits between the app and the cloud. The app keeps writing SQL against a
+          local SQLite file (offline-first), PowerSync pushes/pulls changes over a WebSocket to a managed sync
+          service, which writes through to a <b class="accent-green">Supabase Postgres</b> database that also owns
+          auth. Both PowerSync and Supabase have free tiers that fit a single user.
+        </p>
+        <div class="rounded-xl border border-base-300 p-4">
+          <div class="mermaid">
+flowchart LR
+  A["📱 Phone<br/><span style='font-size:11px'>expo-sqlite (local)</span>"] -->|"local writes (SQL)"| B["🔄 PowerSync<br/><span style='font-size:11px'>sync engine (offline-first)</span>"]
+  C["💻 Web (PC)<br/><span style='font-size:11px'>PowerSync web adapter</span>"] -->|"local writes"| B
+  B <-->|"WebSocket sync<br/><span style='font-size:11px'>CRUD deltas</span>"| D["☁️ PowerSync Service<br/><span style='font-size:11px'>managed / self-host</span>"]
+  D --> E["🗄️ Supabase<br/><span style='font-size:11px'>Postgres + Auth + RLS</span>"]
+  A -->|"login"| E
+  C -->|"login"| E
+  E -.->|"auth JWT"| B
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4 text-xs">
+          <div class="rounded-lg bg-base-200 p-3">
+            <div class="font-semibold accent mb-1">Local layer (unchanged feel)</div>
+            <p class="text-base-content/65">expo-sqlite keeps running on-device. Queries stay SQL. Reads are instant, writes are local-first, sync happens in the background — the app works fully offline.</p>
+          </div>
+          <div class="rounded-lg bg-base-200 p-3">
+            <div class="font-semibold accent-green mb-1">Sync layer (new)</div>
+            <p class="text-base-content/65">PowerSync maps your tables, uploads local mutations, and applies remote changes with conflict resolution. Runs identically on native and web.</p>
+          </div>
+          <div class="rounded-lg bg-base-200 p-3">
+            <div class="font-semibold accent-purple mb-1">Cloud layer (new)</div>
+            <p class="text-base-content/65">Supabase hosts Postgres with row-level security scoped to the signed-in user, plus the auth flow (email link / password / social).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ The core change ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <span class="badge badge-soft badge-warning badge-sm">Biggest change</span>
+        </div>
+        <h2 class="card-title text-xl">Integer IDs must become UUIDs</h2>
+        <p class="text-sm text-base-content/60 mt-1">
+          Distributed sync requires <b>client-generated, collision-free IDs</b>. Today two tables use auto-increment
+          <span class="bump">INTEGER PRIMARY KEY</span>, which breaks when two devices create a row offline and try
+          to sync. The rest already use text UUIDs (<span class="bump">makeId()</span>), which is the correct pattern.
+        </p>
+        <div class="overflow-x-auto mt-4">
+          <table class="table table-sm w-full">
+            <thead>
+              <tr>
+                <th>Table</th>
+                <th>PK today</th>
+                <th>Needs change?</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-error/10">
+                <td class="mono">categories</td>
+                <td><span class="mono">INTEGER</span></td>
+                <td><span class="badge badge-error badge-sm">Yes → TEXT uuid</span></td>
+                <td class="text-base-content/65">Created on multiple devices</td>
+              </tr>
+              <tr class="bg-error/10">
+                <td class="mono">sources</td>
+                <td><span class="mono">INTEGER</span></td>
+                <td><span class="badge badge-error badge-sm">Yes → TEXT uuid</span></td>
+                <td class="text-base-content/65">Created on multiple devices</td>
+              </tr>
+              <tr>
+                <td class="mono">expenses</td>
+                <td><span class="mono">TEXT</span></td>
+                <td><span class="badge badge-success badge-sm">No</span></td>
+                <td class="text-base-content/65">Already makeId()</td>
+              </tr>
+              <tr>
+                <td class="mono">transfers</td>
+                <td><span class="mono">TEXT</span></td>
+                <td><span class="badge badge-success badge-sm">No</span></td>
+                <td class="text-base-content/65">Already makeId()</td>
+              </tr>
+              <tr>
+                <td class="mono">income_entries</td>
+                <td><span class="mono">TEXT</span></td>
+                <td><span class="badge badge-success badge-sm">No</span></td>
+                <td class="text-base-content/65">Already makeId()</td>
+              </tr>
+              <tr>
+                <td class="mono">budgets</td>
+                <td><span class="mono">TEXT</span></td>
+                <td><span class="badge badge-success badge-sm">No</span></td>
+                <td class="text-base-content/65">Already makeId()</td>
+              </tr>
+              <tr>
+                <td class="mono">exchange_rates</td>
+                <td><span class="mono">currency TEXT</span></td>
+                <td><span class="badge badge-warning badge-sm">Keep local</span></td>
+                <td class="text-base-content/65">Derived cache — no need to sync</td>
+              </tr>
+              <tr>
+                <td class="mono">budget_categories</td>
+                <td><span class="mono">(budget_id, category_id)</span></td>
+                <td><span class="badge badge-warning badge-sm">Composite OK</span></td>
+                <td class="text-base-content/65">Join table, no own identity</td>
+              </tr>
+              <tr>
+                <td class="mono">budget_history</td>
+                <td><span class="mono">(category_id, month)</span></td>
+                <td><span class="badge badge-warning badge-sm">Composite OK</span></td>
+                <td class="text-base-content/65">Derived, could stay local</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="alert alert-soft alert-info text-xs mt-4">
+          <div>
+            <b>The ripple:</b> converting <span class="bump">categories.id</span> and <span class="bump">sources.id</span> to
+            UUIDs cascades through every foreign key: <span class="bump">expenses.category_id</span>,
+            <span class="bump">expenses.source_id</span>, <span class="bump">transfers.from/to_source_id</span>,
+            <span class="bump">income_entries.source_id</span>, <span class="bump">budget_categories.category_id</span>,
+            <span class="bump">budget_history.category_id</span>, and <span class="bump">categories.parent_id</span>.
+            This is a one-time data migration, not a schema redesign of the feature model.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ Migration phases ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <h2 class="card-title text-xl mb-4">Migration phases</h2>
+        <ul class="steps steps-vertical md:steps-horizontal w-full text-xs">
+          <li class="step step-primary"><span class="font-semibold">1</span> Backend</li>
+          <li class="step"><span class="font-semibold">2</span> Sync setup</li>
+          <li class="step"><span class="font-semibold">3</span> ID migration</li>
+          <li class="step"><span class="font-semibold">4</span> App wiring</li>
+          <li class="step"><span class="font-semibold">5</span> Cutover</li>
+        </ul>
+        <div class="grid grid-cols-1 gap-4 mt-5">
+          <div class="rounded-xl border border-base-300 p-4">
+            <div class="flex items-center gap-2"><span class="badge badge-primary badge-sm">Phase 1</span><h3 class="font-semibold">Backend provisioning</h3></div>
+            <ul class="list-disc list-inside text-sm text-base-content/70 mt-2 space-y-1">
+              <li>Create a Supabase project; enable Auth (email-link login, simplest for one user).</li>
+              <li>Create Postgres tables mirroring the app schema, but with <span class="bump">uuid</span> PKs on <span class="mono">categories</span> and <span class="mono">sources</span>.</li>
+              <li>Add a <span class="bump">user_id</span> column per table + Row-Level Security so each account only sees its own rows.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-base-300 p-4">
+            <div class="flex items-center gap-2"><span class="badge badge-primary badge-sm">Phase 2</span><h3 class="font-semibold">Sync engine wiring</h3></div>
+            <ul class="list-disc list-inside text-sm text-base-content/70 mt-2 space-y-1">
+              <li>Provision PowerSync (managed free tier or self-hosted Docker image).</li>
+              <li>Point it at the Supabase Postgres DB; define sync rules listing which tables sync and which stay local (<span class="mono">exchange_rates</span>, <span class="mono">budget_history</span>).</li>
+              <li>Configure the PowerSync auth connector to accept Supabase JWTs.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-base-300 p-4">
+            <div class="flex items-center gap-2"><span class="badge badge-primary badge-sm">Phase 3</span><h3 class="font-semibold">One-time local ID migration</h3></div>
+            <ul class="list-disc list-inside text-sm text-base-content/70 mt-2 space-y-1">
+              <li>New migration (v7) in <span class="bump">src/db/schema.ts</span>.</li>
+              <li>Generate a stable UUID per existing category/source row (e.g. seeded from <span class="bump">slug</span> / <span class="bump">name</span>), or backfill via a mapping table.</li>
+              <li>Rewrite all FK columns, then flip the PK column type.</li>
+              <li>Validate: category usage, spending-by-month, budgets, sources, transfers all still report the same numbers.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-base-300 p-4">
+            <div class="flex items-center gap-2"><span class="badge badge-primary badge-sm">Phase 4</span><h3 class="font-semibold">App wiring</h3></div>
+            <ul class="list-disc list-inside text-sm text-base-content/70 mt-2 space-y-1">
+              <li>Add <span class="bump">@powersync/common</span>, <span class="bump">@powersync/react-native</span>, and the web adapter.</li>
+              <li>Provide a <span class="bump">PowerSyncDatabaseProvider</span>; keep the same query helpers (<span class="mono">getExpensesByMonth</span>, etc.) but swap the <span class="mono">db</span> parameter type from <span class="bump">SQLiteDatabase</span> to the PowerSync wrapper — minimal call-site churn.</li>
+              <li>Wire sign-in on launch; gate the app behind an auth check.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-base-300 p-4">
+            <div class="flex items-center gap-2"><span class="badge badge-primary badge-sm">Phase 5</span><h3 class="font-semibold">Cutover & verify</h3></div>
+            <ul class="list-disc list-inside text-sm text-base-content/70 mt-2 space-y-1">
+              <li>Ship to one device, confirm initial sync uploads history, then confirm the web app sees it.</li>
+              <li>Test the offline-first loop: enter an expense on the phone with no connection, see it appear on web after reconnect.</li>
+              <li>Remove <span class="bump">expo-sqlite</span> dependency once PowerSync owns the local DB.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ Tradeoffs / decision ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <h2 class="card-title text-xl mb-1">Why PowerSync over the alternatives</h2>
+        <div class="overflow-x-auto mt-3">
+          <table class="table table-sm w-full">
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Offline-first</th>
+                <th>Keeps SQL</th>
+                <th>Effort</th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-success/10">
+                <td class="font-semibold">PowerSync + Supabase</td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td class="text-base-content/65">Medium</td>
+                <td class="text-sm"><b class="accent-green">Recommended</b> — smallest change to app logic</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Turso embedded replicas</td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td class="text-base-content/65">High</td>
+                <td class="text-sm text-base-content/65">Web path differs from mobile; less mature RN support</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Supabase direct</td>
+                <td><span class="badge badge-error badge-sm">No</span></td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td class="text-base-content/65">Low</td>
+                <td class="text-sm text-base-content/65">Drops offline mode; simplest but weakest fit</td>
+              </tr>
+              <tr>
+                <td class="font-semibold">Firebase Firestore</td>
+                <td><span class="badge badge-success badge-sm">Yes</span></td>
+                <td><span class="badge badge-error badge-sm">No</span></td>
+                <td class="text-base-content/65">Very high</td>
+                <td class="text-sm text-base-content/65">NoSQL — full relational model rewrite</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ Risks & open questions ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <h2 class="card-title text-xl mb-4">Risks & open questions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div class="rounded-xl bg-error/5 border border-error/30 p-4">
+            <h3 class="font-semibold text-error mb-2">Risks</h3>
+            <ul class="list-disc list-inside space-y-1 text-base-content/70">
+              <li><b>ID migration</b> is the one breaking-data step; needs a careful v7 migration + verification.</li>
+              <li><b>Conflict resolution</b> defaults to last-write-wins; two devices editing the same category/budget could clobber. Acceptable for a single user.</li>
+              <li><b>Seed categories</b> (ids 1–8 hardcoded in v1 migration) must map to stable UUIDs or devices could duplicate them.</li>
+              <li><b>Free-tier limits</b> on PowerSync/Supabase could eventually be hit by a growing history; fine for personal use.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl bg-base-200 p-4">
+            <h3 class="font-semibold mb-2">Open questions</h3>
+            <ul class="space-y-2 text-base-content/70">
+              <li class="flex gap-2 items-start"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" id="q1" /><label for="q1">Host PowerSync (free tier) or self-host the Docker image on a $5 VPS?</label></li>
+              <li class="flex gap-2 items-start"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" id="q2" /><label for="q2">Auth: email magic-link only, or email + password? (magic-link is simplest for one user)</label></li>
+              <li class="flex gap-2 items-start"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" id="q3" /><label for="q3">Should <span class="bump">budget_history</span> sync too, or stay derived/local like exchange_rates?</label></li>
+              <li class="flex gap-2 items-start"><input type="checkbox" class="checkbox checkbox-primary checkbox-sm mt-0.5" id="q4" /><label for="q4">Seed categories: give fixed UUIDs (deterministic) vs. random per device (risk of dupes)?</label></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ Next step ════════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-6 md:p-8">
+        <h2 class="card-title text-xl mb-2">Next step</h2>
+        <p class="text-sm text-base-content/70">
+          Start with <b>Phase 1</b> once the open questions above are settled. I can draft the full Phase 1 SQL
+          (Supabase schema + RLS policies) and the Phase 3 <span class="bump">v7</span> ID-migration script now —
+          tell me which decisions you want, and I'll write them.
+        </p>
+        <div class="card-actions justify-end mt-4">
+          <button class="btn btn-primary btn-sm">Approve plan</button>
+          <button class="btn btn-ghost btn-sm">Adjust scope</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.esm.min.mjs";
+
+    const darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const paint = document.createElement("canvas").getContext("2d");
+    function toRgba(color) {
+      paint.clearRect(0, 0, 1, 1);
+      paint.fillStyle = "#000";
+      paint.fillStyle = color;
+      paint.fillRect(0, 0, 1, 1);
+      return paint.getImageData(0, 0, 1, 1).data;
+    }
+    function compositeRgba(fg, bg) {
+      const fa = fg[3] / 255, ba = bg[3] / 255;
+      const a = fa + ba * (1 - fa);
+      if (a === 0) return [0, 0, 0, 0];
+      return [
+        (fg[0] * fa + bg[0] * ba * (1 - fa)) / a,
+        (fg[1] * fa + bg[1] * ba * (1 - fa)) / a,
+        (fg[2] * fa + bg[2] * ba * (1 - fa)) / a,
+        a * 255,
+      ];
+    }
+    function pageIsDark() {
+      const root = document.documentElement;
+      const rb = toRgba(getComputedStyle(root).backgroundColor);
+      const bb = document.body ? toRgba(getComputedStyle(document.body).backgroundColor) : [0, 0, 0, 0];
+      const [r, g, b, a] = compositeRgba(bb, rb);
+      if (a > 0) return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+      const cs = getComputedStyle(root).colorScheme;
+      if (cs.includes("dark") && !cs.includes("light")) return true;
+      if (cs.includes("light") && !cs.includes("dark")) return false;
+      return darkQuery.matches;
+    }
+
+    const diagrams = [...document.querySelectorAll(".mermaid")].map((el) => ({ el, src: el.textContent }));
+    let applied, rendering = false, queued = false;
+    function queueRender() {
+      queued = true;
+      if (rendering) return;
+      void render();
+    }
+    async function render() {
+      rendering = true;
+      try {
+        while (queued) {
+          queued = false;
+          const theme = pageIsDark() ? "dark" : "default";
+          if (theme === applied) continue;
+          mermaid.initialize({ startOnLoad: false, theme, securityLevel: "strict" });
+          for (const { el, src } of diagrams) {
+            el.removeAttribute("data-processed");
+            el.textContent = src;
+          }
+          try { await mermaid.run({ nodes: diagrams.map((d) => d.el) }); }
+          catch (error) { console.error("Mermaid diagram render failed:", error); return; }
+          applied = theme;
+        }
+      } finally { rendering = false; if (queued) queueRender(); }
+    }
+    if (document.readyState === "complete") queueRender();
+    else window.addEventListener("load", queueRender, { once: true });
+    const themeObserver = new MutationObserver(queueRender);
+    for (const el of [document.documentElement, document.body]) {
+      if (!el) continue;
+      themeObserver.observe(el, { attributes: true, attributeFilter: ["data-theme", "class", "style"] });
+    }
+    document.addEventListener("change", queueRender, true);
+    document.addEventListener("transitionend", ({ propertyName }) => {
+      if (propertyName === "background-color") queueRender();
+    }, true);
+    darkQuery.addEventListener("change", queueRender);
+  </script>
+
+</body>
+</html>

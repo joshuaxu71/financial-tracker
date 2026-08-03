@@ -1,0 +1,117 @@
+import { PowerSyncContext } from "@powersync/react";
+import { PowerSyncDatabase } from "@powersync/react-native";
+import type { PropsWithChildren } from "react";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+
+import { useTheme } from "@/hooks/use-theme";
+
+import { AppSchema } from "./AppSchema";
+import { AuthScreen } from "./AuthScreen";
+import { SupabaseConnector } from "./SupabaseConnector";
+import { seedDefaults } from "./seed";
+
+export const supabaseConnector = new SupabaseConnector();
+
+const db = new PowerSyncDatabase({
+   schema: AppSchema,
+   database: {
+      dbFilename: "financial.db",
+   },
+});
+
+export const SystemProvider = ({ children }: PropsWithChildren) => {
+   const [ready, setReady] = useState(false);
+   const [error, setError] = useState<unknown>(null);
+   const [user, setUser] = useState(supabaseConnector.currentSession?.user ?? null);
+
+   useEffect(() => {
+      async function setup() {
+         try {
+            await supabaseConnector.init();
+            await db.init();
+            await db.connect(supabaseConnector);
+            setUser(supabaseConnector.currentSession?.user ?? null);
+            supabaseConnector.registerListener({
+               sessionChanged: (session) => setUser(session.user),
+            });
+            setReady(true);
+         } catch (e) {
+            setError(e);
+         }
+      }
+      void setup();
+   }, []);
+
+   useEffect(() => {
+      if (user) {
+         void seedDefaults(db);
+      }
+   }, [user]);
+
+   if (error) {
+      return (
+         <Fallback
+            message={`Failed to start sync: ${String(error)}`}
+            onRetry={() => {
+               setError(null);
+               void setup().catch((e) => setError(e));
+            }}
+         />
+      );
+   }
+
+   if (!ready) {
+      return <Fallback message="Connecting to sync service…" />;
+   }
+
+   if (!user) {
+      return <AuthScreen />;
+   }
+
+   return <PowerSyncContext.Provider value={db}>{children}</PowerSyncContext.Provider>;
+};
+
+async function setup(): Promise<void> {
+   await supabaseConnector.init();
+   await db.init();
+   await db.connect(supabaseConnector);
+}
+
+function Fallback({ message, onRetry }: { message: string; onRetry?: () => void }) {
+   const theme = useTheme();
+   return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+         <ActivityIndicator color={theme.trackFocused} />
+         <Text style={[styles.text, { color: theme.textSecondary }]}>{message}</Text>
+         {onRetry && (
+            <Pressable onPress={onRetry} style={styles.button}>
+               <Text style={[styles.buttonText, { color: theme.trackFocused }]}>Retry</Text>
+            </Pressable>
+         )}
+      </View>
+   );
+}
+
+const styles = StyleSheet.create({
+   container: {
+      justifyContent: "center",
+      alignItems: "center",
+      flex: 1,
+      gap: 16,
+      padding: 24,
+   },
+   text: {
+      fontSize: 14,
+      textAlign: "center",
+   },
+   button: {
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 12,
+   },
+   buttonText: {
+      fontSize: 16,
+      fontWeight: "600",
+   },
+});

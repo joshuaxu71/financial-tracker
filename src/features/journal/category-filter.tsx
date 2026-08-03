@@ -7,8 +7,8 @@ import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
    categories: readonly Category[];
-   selectedGroupId: number | null;
-   onChange: (groupId: number | null) => void;
+   selectedGroupId: string | null;
+   onChange: (groupId: string | null) => void;
 };
 
 export function CategoryFilter({ categories, selectedGroupId, onChange }: Props) {

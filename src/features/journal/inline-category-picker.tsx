@@ -9,8 +9,8 @@ import { useTheme } from "@/hooks/use-theme";
 type Props = {
    visible: boolean;
    categories: readonly Category[];
-   selectedCategoryId: number;
-   onSelect: (categoryId: number) => void;
+   selectedCategoryId: string;
+   onSelect: (categoryId: string) => void;
    onDismiss: () => void;
 };
 
@@ -20,7 +20,7 @@ type TreeNode = {
 };
 
 function buildTree(categories: readonly Category[]): TreeNode[] {
-   const byParent = new Map<number | null, Category[]>();
+   const byParent = new Map<string | null, Category[]>();
    for (const c of categories) {
       const list = byParent.get(c.parent_id) ?? [];
       list.push(c);
@@ -40,7 +40,7 @@ export function InlineCategoryPicker({
    onDismiss,
 }: Props) {
    const theme = useTheme();
-   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
    const tree = buildTree(categories);
 
@@ -53,7 +53,7 @@ export function InlineCategoryPicker({
       onDismiss();
    }
 
-   function toggle(id: number) {
+   function toggle(id: string) {
       setExpanded((prev) => {
          const next = new Set(prev);
          if (next.has(id)) next.delete(id);
@@ -91,7 +91,7 @@ export function InlineCategoryPicker({
       );
    }
 
-   function select(id: number) {
+   function select(id: string) {
       reset();
       onSelect(id);
    }

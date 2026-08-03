@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useState } from "react";
 import { Alert, Modal, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -16,7 +16,7 @@ type Props = {
 };
 
 export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
    const [amount, setAmount] = useState("");
    const [date, setDate] = useState(today());

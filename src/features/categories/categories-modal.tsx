@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useCallback, useMemo, useState } from "react";
 import {
    Alert,
@@ -53,7 +53,7 @@ type TreeNode = {
 };
 
 function buildTree(categories: readonly CategoryRow[]): TreeNode[] {
-   const byParent = new Map<number | null, CategoryRow[]>();
+   const byParent = new Map<string | null, CategoryRow[]>();
    for (const c of categories) {
       const list = byParent.get(c.parent_id) ?? [];
       list.push(c);
@@ -70,7 +70,7 @@ function buildTree(categories: readonly CategoryRow[]): TreeNode[] {
 }
 
 function budgetViolation(categories: readonly CategoryRow[]): string | null {
-   const hasChildren = (id: number) => categories.some((c) => c.parent_id === id);
+   const hasChildren = (id: string) => categories.some((c) => c.parent_id === id);
    for (const group of categories) {
       if (group.budget == null) continue;
       const leaves = categories.filter((c) => c.parent_id === group.id && !hasChildren(c.id));
@@ -89,19 +89,19 @@ function budgetViolation(categories: readonly CategoryRow[]): string | null {
 }
 
 export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: Props) {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
-   const [usage, setUsage] = useState<Map<number, number>>(new Map());
+   const [usage, setUsage] = useState<Map<string, number>>(new Map());
    const [expenses, setExpenses] = useState<Expense[]>([]);
    const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
-   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+   const [expanded, setExpanded] = useState<Set<string>>(new Set());
    const [editor, setEditor] = useState<{
       mode: "new" | "edit";
-      id: number | null;
+      id: string | null;
       name: string;
-      parentId: number | null;
+      parentId: string | null;
       color: string | null;
       budget: string;
    } | null>(null);
@@ -125,8 +125,8 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
    const tree = useMemo(() => buildTree(categories), [categories]);
 
    const descendants = useMemo(() => {
-      const set = new Set<number>();
-      function visit(id: number) {
+      const set = new Set<string>();
+      function visit(id: string) {
          for (const c of categories) {
             if (c.parent_id === id && !set.has(c.id)) {
                set.add(c.id);
@@ -134,14 +134,14 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
             }
          }
       }
-      return (id: number) => {
+      return (id: string) => {
          set.clear();
          visit(id);
          return set;
       };
    }, [categories]);
 
-   function toggle(id: number) {
+   function toggle(id: string) {
       setExpanded((prev) => {
          const next = new Set(prev);
          if (next.has(id)) next.delete(id);
@@ -244,7 +244,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       }
    }
 
-   async function reassignAndDelete(targetId: number) {
+   async function reassignAndDelete(targetId: string) {
       if (!editor || editor.id == null) return;
       await deleteCategory(db, editor.id, targetId);
       setShowReassign(false);
@@ -275,7 +275,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
    const reassignTargets = useMemo(() => {
       if (!editor?.id) return categories;
-      const excluded = new Set<number>([editor.id]);
+      const excluded = new Set<string>([editor.id]);
       descendants(editor.id).forEach((id) => excluded.add(id));
       return categories.filter((c) => !excluded.has(c.id));
    }, [categories, editor, descendants]);
@@ -556,7 +556,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                      </TouchableOpacity>
                      {categories
                         .filter(
-                           (c) => !descendants(editor.id ?? -1).has(c.id) && c.id !== editor.id,
+                           (c) => !descendants(editor.id ?? "").has(c.id) && c.id !== editor.id,
                         )
                         .map((c) => {
                            const color = resolveCategoryColor(categories, c.id);
@@ -601,7 +601,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                      onStartShouldSetResponder={() => true}
                   >
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
-                        Move {usage.get(editor.id ?? -1) ?? 0} expenses to…
+                        Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
                      <ThemedText themeColor="textSecondary" style={styles.sheetSubtitle}>
                         Deleting &quot;{editor.name}&quot; — choose where its expenses go.

@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type DimensionValue, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -30,7 +30,7 @@ type DashboardNode = {
 };
 
 function buildTree(categories: CategoryRow[]): DashboardNode[] {
-   const byParent = new Map<number | null, CategoryRow[]>();
+   const byParent = new Map<string | null, CategoryRow[]>();
    for (const c of categories) {
       const list = byParent.get(c.parent_id) ?? [];
       list.push(c);
@@ -49,7 +49,7 @@ function buildTree(categories: CategoryRow[]): DashboardNode[] {
 const WINDOW_OPTIONS = [1, 3, 6, 12] as const;
 
 export default function DashboardScreen() {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
    const { year: initYear, month: initMonth } = currentYearMonth();
@@ -57,11 +57,11 @@ export default function DashboardScreen() {
    const [year, setYear] = useState(initYear);
    const [month, setMonth] = useState(initMonth);
    const [windowMonths, setWindowMonths] = useState<(typeof WINDOW_OPTIONS)[number]>(1);
-   const [filterGroupId, setFilterGroupId] = useState<number | null>(null);
+   const [filterGroupId, setFilterGroupId] = useState<string | null>(null);
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [expenses, setExpenses] = useState<Expense[]>([]);
    const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
-   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+   const [expanded, setExpanded] = useState<Set<string>>(new Set());
    const [showMonthPicker, setShowMonthPicker] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
 
@@ -129,7 +129,7 @@ export default function DashboardScreen() {
       setShowMonthPicker(false);
    }
 
-   function toggleExpand(id: number) {
+   function toggleExpand(id: string) {
       setExpanded((prev) => {
          const next = new Set(prev);
          if (next.has(id)) next.delete(id);

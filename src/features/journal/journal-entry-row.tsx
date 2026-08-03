@@ -20,8 +20,8 @@ type Props = {
    descInputRef: RefObject<TextInput | null>;
    onAmountChange: (value: string) => void;
    onDescriptionChange: (value: string) => void;
-   onCategoryChange: (categoryId: number) => void;
-   onSourceChange: (sourceId: number) => void;
+   onCategoryChange: (categoryId: string) => void;
+   onSourceChange: (sourceId: string) => void;
    onAmountSubmit: () => void;
    onDescriptionSubmit: () => void;
    onDeleteRow: () => void;

@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
    Alert,
@@ -43,7 +43,7 @@ type DaySection = {
 type RowRefs = { amount: { current: TextInput | null }; desc: { current: TextInput | null } };
 
 export default function TrackScreen() {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
 
@@ -53,10 +53,19 @@ export default function TrackScreen() {
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [sources, setSources] = useState<SourceRow[]>([]);
    const [rates, setRates] = useState<Map<string, number>>(new Map());
-   const [filterGroupId, setFilterGroupId] = useState<number | null>(null);
+   const [filterGroupId, setFilterGroupId] = useState<string | null>(null);
    const [showMonthPicker, setShowMonthPicker] = useState(false);
    const [showCategories, setShowCategories] = useState(false);
    const [isSaving, setIsSaving] = useState(false);
+
+   const defaultCategoryId = useMemo(
+      () => categories.find((c) => c.slug === "food")?.id ?? categories[0]?.id ?? "",
+      [categories],
+   );
+   const defaultSourceId = useMemo(
+      () => sources.find((s) => s.name === "Cash")?.id ?? sources[0]?.id ?? "",
+      [sources],
+   );
 
    const {
       rowsByDate,
@@ -70,15 +79,15 @@ export default function TrackScreen() {
       clearAll,
       getCommittedEntries,
       setLastSourceId,
-   } = useJournalEntries();
+   } = useJournalEntries(defaultCategoryId, defaultSourceId);
 
    const isCurrentMonth = viewYear === NOW_YEAR && viewMonth === NOW_MONTH;
 
    const isUnderGroup = useCallback(
-      (categoryId: number, groupId: number): boolean => {
+      (categoryId: string, groupId: string): boolean => {
          const byId = new Map(categories.map((c) => [c.id, c]));
          let current = byId.get(categoryId);
-         const seen = new Set<number>();
+         const seen = new Set<string>();
          while (current && !seen.has(current.id)) {
             seen.add(current.id);
             if (current.parent_id === groupId) return true;
@@ -125,8 +134,10 @@ export default function TrackScreen() {
    }, [loadSources, activeIndex]);
 
    useEffect(() => {
-      if (isCurrentMonth) ensureDayRows(TODAY);
-   }, [isCurrentMonth, ensureDayRows]);
+      if (isCurrentMonth && categories.length > 0 && sources.length > 0) {
+         ensureDayRows(TODAY);
+      }
+   }, [isCurrentMonth, categories.length, sources.length, ensureDayRows]);
 
    useEffect(() => {
       if (!activeCell) return;

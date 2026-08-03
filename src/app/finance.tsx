@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
@@ -17,7 +17,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 
 export default function FinanceScreen() {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
 
@@ -50,7 +50,7 @@ export default function FinanceScreen() {
    }, [db, load, activeIndex]);
 
    const balance = useMemo(() => {
-      const map = new Map<number, number>();
+      const map = new Map<string, number>();
       for (const s of sources) map.set(s.id, s.opening_balance);
       for (const inc of income) map.set(inc.source_id, (map.get(inc.source_id) ?? 0) + inc.amount);
       for (const e of expenses) map.set(e.source_id, (map.get(e.source_id) ?? 0) - e.amount);

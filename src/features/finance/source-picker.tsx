@@ -8,8 +8,8 @@ import { useTheme } from "@/hooks/use-theme";
 type Props = {
    visible: boolean;
    sources: readonly SourceRow[];
-   selectedSourceId: number;
-   onSelect: (sourceId: number) => void;
+   selectedSourceId: string;
+   onSelect: (sourceId: string) => void;
    onDismiss: () => void;
 };
 

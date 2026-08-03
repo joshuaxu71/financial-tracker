@@ -36,8 +36,8 @@ function historyMonthKey(month: string): number {
    return monthKey(Number(parts[0]), Number(parts[1]));
 }
 
-function subtreeIds(categories: readonly CategoryRow[], rootId: number): Set<number> {
-   const ids = new Set<number>();
+function subtreeIds(categories: readonly CategoryRow[], rootId: string): Set<string> {
+   const ids = new Set<string>();
    const stack = [rootId];
    while (stack.length > 0) {
       const id = stack.pop()!;
@@ -65,7 +65,7 @@ type Allocator = {
 function makeAllocator(
    categories: readonly CategoryRow[],
    history: readonly BudgetHistoryRow[],
-   categoryId: number,
+   categoryId: string,
    targetKey: number,
 ): Allocator {
    const cat = categories.find((c) => c.id === categoryId);
@@ -103,7 +103,7 @@ export function budgetStateForMonth(
    categories: readonly CategoryRow[],
    expenses: readonly Expense[],
    history: readonly BudgetHistoryRow[],
-   categoryId: number,
+   categoryId: string,
    year: number,
    month: number,
 ): BudgetState {
@@ -157,7 +157,7 @@ export function budgetStateForWindow(
    categories: readonly CategoryRow[],
    expenses: readonly Expense[],
    history: readonly BudgetHistoryRow[],
-   categoryId: number,
+   categoryId: string,
    year: number,
    month: number,
    windowMonths: number,

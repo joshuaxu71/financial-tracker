@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useCallback, useState } from "react";
 import {
    Alert,
@@ -34,7 +34,7 @@ type Props = {
 
 type Editor = {
    mode: "new" | "edit";
-   id: number | null;
+   id: string | null;
    name: string;
    currency: string;
    color: string | null;
@@ -42,11 +42,11 @@ type Editor = {
 };
 
 export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
 
    const [sources, setSources] = useState<SourceRow[]>([]);
-   const [usage, setUsage] = useState<Map<number, number>>(new Map());
+   const [usage, setUsage] = useState<Map<string, number>>(new Map());
    const [editor, setEditor] = useState<Editor | null>(null);
    const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
    const [showReassign, setShowReassign] = useState(false);
@@ -141,7 +141,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
       }
    }
 
-   async function reassignAndDelete(targetId: number) {
+   async function reassignAndDelete(targetId: string) {
       if (!editor || editor.id == null) return;
       await deleteSource(db, editor.id, targetId);
       setShowReassign(false);
@@ -346,7 +346,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                      onStartShouldSetResponder={() => true}
                   >
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
-                        Move {usage.get(editor.id ?? -1) ?? 0} expenses to…
+                        Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
                      <ThemedText themeColor="textSecondary" style={styles.sheetSubtitle}>
                         Deleting &quot;{editor.name}&quot; — choose where its expenses go.

@@ -1,4 +1,4 @@
-import { useSQLiteContext } from "expo-sqlite";
+import { usePowerSync } from "@powersync/react";
 import { useEffect, useState } from "react";
 import { Alert, Modal, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
@@ -26,9 +26,9 @@ export function TransferModal({
    onDismiss,
    onChanged,
 }: Props) {
-   const db = useSQLiteContext();
+   const db = usePowerSync();
    const theme = useTheme();
-   const [toSourceId, setToSourceId] = useState<number | null>(null);
+   const [toSourceId, setToSourceId] = useState<string | null>(null);
    const [fromAmount, setFromAmount] = useState("");
    const [toAmount, setToAmount] = useState("");
    const [date, setDate] = useState(today());
