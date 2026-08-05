@@ -217,8 +217,9 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
          setEditor(null);
          await load();
          onChanged();
-      } catch {
-         Alert.alert("Save failed", "Could not save the category.");
+      } catch (error) {
+         const message = error instanceof Error ? error.message : String(error);
+         Alert.alert("Save failed", `Could not save the category.\n\n${message}`);
       }
    }
 
