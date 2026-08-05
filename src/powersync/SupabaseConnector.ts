@@ -20,7 +20,7 @@ export type SupabaseConnectorListener = {
 };
 
 /**
- * Bridges Supabase Auth (email magic link) and the PowerSync client.
+ * Bridges Supabase Auth (email + password) and the PowerSync client.
  *
  * fetchCredentials returns the user's Supabase access token so the PowerSync
  * service can authorize against Supabase's JWKS. uploadData pushes local
@@ -42,7 +42,8 @@ export class SupabaseConnector
             storage: AsyncStorage,
             autoRefreshToken: true,
             persistSession: true,
-            detectSessionInUrl: false,
+            detectSessionInUrl: true,
+            flowType: "pkce",
          },
       });
       this.ready = false;
@@ -61,8 +62,14 @@ export class SupabaseConnector
       this.iterateListeners((listener) => listener.initialized?.());
    }
 
-   async signIn(email: string): Promise<void> {
-      const { error } = await this.client.auth.signInWithOtp({ email });
+   async signUp(email: string, password: string): Promise<boolean> {
+      const { data, error } = await this.client.auth.signUp({ email, password });
+      if (error) throw error;
+      return data.session != null;
+   }
+
+   async signIn(email: string, password: string): Promise<void> {
+      const { error } = await this.client.auth.signInWithPassword({ email, password });
       if (error) throw error;
    }
 
@@ -124,3 +131,5 @@ function isFatalResponse(error: unknown): boolean {
    const message = error instanceof Error ? error.message : String(error);
    return FATAL_RESPONSE_CODES.some((code) => code.test(message));
 }
+
+export const supabaseConnector = new SupabaseConnector();

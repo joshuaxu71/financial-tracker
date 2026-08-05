@@ -8,10 +8,8 @@ import { useTheme } from "@/hooks/use-theme";
 
 import { AppSchema } from "./AppSchema";
 import { AuthScreen } from "./AuthScreen";
-import { SupabaseConnector } from "./SupabaseConnector";
+import { supabaseConnector } from "./SupabaseConnector";
 import { seedDefaults } from "./seed";
-
-export const supabaseConnector = new SupabaseConnector();
 
 const db = new PowerSyncDatabase({
    schema: AppSchema,
@@ -30,7 +28,6 @@ export const SystemProvider = ({ children }: PropsWithChildren) => {
          try {
             await supabaseConnector.init();
             await db.init();
-            await db.connect(supabaseConnector);
             setUser(supabaseConnector.currentSession?.user ?? null);
             supabaseConnector.registerListener({
                sessionChanged: (session) => setUser(session.user),
@@ -44,10 +41,14 @@ export const SystemProvider = ({ children }: PropsWithChildren) => {
    }, []);
 
    useEffect(() => {
-      if (user) {
-         void seedDefaults(db);
+      if (!ready) return;
+      if (!user) {
+         void db.disconnect();
+         return;
       }
-   }, [user]);
+      void db.connect(supabaseConnector).catch((e) => setError(e));
+      void seedDefaults(db);
+   }, [user, ready]);
 
    if (error) {
       return (
@@ -55,7 +56,10 @@ export const SystemProvider = ({ children }: PropsWithChildren) => {
             message={`Failed to start sync: ${String(error)}`}
             onRetry={() => {
                setError(null);
-               void setup().catch((e) => setError(e));
+               void supabaseConnector
+                  .init()
+                  .then(() => setUser(supabaseConnector.currentSession?.user ?? null))
+                  .catch((e) => setError(e));
             }}
          />
       );
@@ -71,12 +75,6 @@ export const SystemProvider = ({ children }: PropsWithChildren) => {
 
    return <PowerSyncContext.Provider value={db}>{children}</PowerSyncContext.Provider>;
 };
-
-async function setup(): Promise<void> {
-   await supabaseConnector.init();
-   await db.init();
-   await db.connect(supabaseConnector);
-}
 
 function Fallback({ message, onRetry }: { message: string; onRetry?: () => void }) {
    const theme = useTheme();

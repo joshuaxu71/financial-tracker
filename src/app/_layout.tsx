@@ -28,10 +28,10 @@ export default function TabLayout() {
          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
             <SystemProvider>
                <TabNavigationProvider>
-                  <AnimatedSplashOverlay />
                   <AppTabs />
                </TabNavigationProvider>
             </SystemProvider>
+            <AnimatedSplashOverlay />
          </ThemeProvider>
       </GestureHandlerRootView>
    );
