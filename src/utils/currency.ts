@@ -1,9 +1,6 @@
-export const CURRENCY_CODE = 'JPY' as const;
+import { BASE_CURRENCY, formatCurrencyAmount } from "@/constants/currencies";
 
+/** Format an amount in the app's base currency (JPY). */
 export function formatAmount(amount: number): string {
-  return new Intl.NumberFormat('ja-JP', {
-    style: 'currency',
-    currency: CURRENCY_CODE,
-    maximumFractionDigits: 0,
-  }).format(amount);
+   return formatCurrencyAmount(amount, BASE_CURRENCY);
 }

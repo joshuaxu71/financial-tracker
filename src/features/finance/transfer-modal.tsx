@@ -4,6 +4,7 @@ import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from "react-nati
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
+import { sheetStyles } from "@/constants/sheet-styles";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
 import { type TransferRow, insertTransfer, updateTransfer } from "@/db/transfers";
@@ -107,12 +108,12 @@ export function TransferModal({
 
    return (
       <Overlay visible={visible} onRequestClose={close}>
-         <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText type="smallBold" style={styles.title}>
+         <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold" style={sheetStyles.title}>
                {transfer ? `Edit transfer · ${active.name}` : `Transfer · ${active.name}`}
             </ThemedText>
 
-            <ThemedText themeColor="textSecondary" style={styles.label}>
+            <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                To
             </ThemedText>
             <View style={styles.chipRow}>
@@ -140,7 +141,7 @@ export function TransferModal({
                })}
             </View>
 
-            <ThemedText themeColor="textSecondary" style={styles.label}>
+            <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                Amount ({active.currency})
             </ThemedText>
             <TextInput
@@ -150,7 +151,7 @@ export function TransferModal({
                placeholderTextColor={theme.textSecondary}
                keyboardType="decimal-pad"
                style={[
-                  styles.input,
+                  sheetStyles.input,
                   { color: theme.text, backgroundColor: theme.backgroundSelected },
                ]}
                autoFocus
@@ -158,7 +159,7 @@ export function TransferModal({
 
             {!sameCurrency && toSource != null && (
                <>
-                  <ThemedText themeColor="textSecondary" style={styles.label}>
+                  <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                      Received ({toSource.currency})
                   </ThemedText>
                   <TextInput
@@ -168,14 +169,14 @@ export function TransferModal({
                      placeholderTextColor={theme.textSecondary}
                      keyboardType="decimal-pad"
                      style={[
-                        styles.input,
+                        sheetStyles.input,
                         { color: theme.text, backgroundColor: theme.backgroundSelected },
                      ]}
                   />
                </>
             )}
 
-            <ThemedText themeColor="textSecondary" style={styles.label}>
+            <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                Date
             </ThemedText>
             <TextInput
@@ -186,18 +187,18 @@ export function TransferModal({
                autoCapitalize="none"
                autoCorrect={false}
                style={[
-                  styles.input,
+                  sheetStyles.input,
                   { color: theme.text, backgroundColor: theme.backgroundSelected },
                ]}
             />
 
-            <View style={styles.actions}>
-               <TouchableOpacity onPress={close} style={styles.cancelButton}>
+            <View style={sheetStyles.actions}>
+               <TouchableOpacity onPress={close} style={sheetStyles.cancelButton}>
                   <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                </TouchableOpacity>
                <TouchableOpacity
                   onPress={save}
-                  style={[styles.saveButton, { backgroundColor: theme.text }]}
+                  style={[sheetStyles.saveButton, { backgroundColor: theme.text }]}
                >
                   <ThemedText type="smallBold" style={{ color: theme.background }}>
                      Transfer
@@ -210,50 +211,14 @@ export function TransferModal({
 }
 
 const styles = StyleSheet.create({
-   sheet: {
-      gap: Spacing.two,
-      width: 320,
-      padding: Spacing.four,
-      borderRadius: Spacing.three,
-   },
-   title: { marginBottom: Spacing.one },
-   label: {
-      marginTop: Spacing.two,
-      fontSize: 12,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-   },
-   input: {
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-      fontSize: 15,
-   },
    chipRow: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: Spacing.two,
+      gap: 8,
    },
    chip: {
-      paddingHorizontal: Spacing.three,
+      paddingHorizontal: 16,
       paddingVertical: Spacing.one,
       borderRadius: Spacing.two,
-   },
-   actions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: Spacing.three,
-      marginTop: Spacing.four,
-   },
-   cancelButton: {
-      justifyContent: "center",
-      paddingHorizontal: Spacing.two,
-   },
-   saveButton: {
-      alignItems: "center",
-      paddingHorizontal: Spacing.five,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.three,
    },
 });

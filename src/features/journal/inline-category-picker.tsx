@@ -2,7 +2,12 @@ import { useState } from "react";
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
-import { type Category, resolveCategoryColor } from "@/constants/categories";
+import {
+   type Category,
+   type CategoryTreeNode,
+   buildCategoryTree,
+   resolveCategoryColor,
+} from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -14,23 +19,7 @@ type Props = {
    onDismiss: () => void;
 };
 
-type TreeNode = {
-   category: Category;
-   children: TreeNode[];
-};
-
-function buildTree(categories: readonly Category[]): TreeNode[] {
-   const byParent = new Map<string | null, Category[]>();
-   for (const c of categories) {
-      const list = byParent.get(c.parent_id) ?? [];
-      list.push(c);
-      byParent.set(c.parent_id, list);
-   }
-   function build(cats: Category[]): TreeNode[] {
-      return cats.map((c) => ({ category: c, children: build(byParent.get(c.id) ?? []) }));
-   }
-   return build(byParent.get(null) ?? []);
-}
+type TreeNode = CategoryTreeNode<Category>;
 
 export function InlineCategoryPicker({
    visible,
@@ -42,7 +31,7 @@ export function InlineCategoryPicker({
    const theme = useTheme();
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-   const tree = buildTree(categories);
+   const tree = buildCategoryTree(categories);
 
    function reset() {
       setExpanded(new Set());

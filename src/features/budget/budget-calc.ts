@@ -2,6 +2,7 @@ import { type BudgetHistoryRow, type CategoryRow } from "@/db/categories";
 import { type Expense } from "@/db/expenses";
 import { convertToJpy } from "@/db/rates";
 import { type SourceRow } from "@/db/sources";
+import { fromMonthKey, monthKey } from "@/utils/date";
 
 /**
  * Returns expenses with their amounts converted to JPY using each one's
@@ -18,10 +19,6 @@ export function convertExpensesToJpy(
       ...e,
       amount: convertToJpy(e.amount, currency.get(e.source_id) ?? "JPY", rates),
    }));
-}
-
-function monthKey(year: number, month: number): number {
-   return year * 12 + (month - 1);
 }
 
 function monthKeyOf(date: string | null, fallback: number): number {
@@ -172,9 +169,8 @@ export function budgetStateForWindow(
       allocated += allocationAt(key);
    }
 
-   const start = Math.floor(windowStartKey / 12);
-   const startM = (windowStartKey % 12) + 1;
-   const windowStart = `${start}-${String(startM).padStart(2, "0")}-01`;
+   const windowStartYM = fromMonthKey(windowStartKey);
+   const windowStart = `${windowStartYM.year}-${String(windowStartYM.month).padStart(2, "0")}-01`;
    const windowEnd = `${year}-${String(month).padStart(2, "0")}-31`;
 
    let spent = 0;

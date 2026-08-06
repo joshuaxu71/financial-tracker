@@ -1,10 +1,10 @@
 import { usePowerSync } from "@powersync/react";
 import { useState } from "react";
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
-import { Spacing } from "@/constants/theme";
+import { sheetStyles } from "@/constants/sheet-styles";
 import { type SourceRow, insertIncome } from "@/db/sources";
 import { useTheme } from "@/hooks/use-theme";
 import { today } from "@/utils/date";
@@ -52,12 +52,12 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
 
    return (
       <Overlay visible={visible} onRequestClose={close}>
-         <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
-            <ThemedText type="smallBold" style={styles.title}>
+         <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold" style={sheetStyles.title}>
                Add money · {source.name}
             </ThemedText>
 
-            <ThemedText themeColor="textSecondary" style={styles.label}>
+            <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                Amount ({source.currency})
             </ThemedText>
             <TextInput
@@ -67,13 +67,13 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
                placeholderTextColor={theme.textSecondary}
                keyboardType="decimal-pad"
                style={[
-                  styles.input,
+                  sheetStyles.input,
                   { color: theme.text, backgroundColor: theme.backgroundSelected },
                ]}
                autoFocus
             />
 
-            <ThemedText themeColor="textSecondary" style={styles.label}>
+            <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                Date
             </ThemedText>
             <TextInput
@@ -84,18 +84,18 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
                autoCapitalize="none"
                autoCorrect={false}
                style={[
-                  styles.input,
+                  sheetStyles.input,
                   { color: theme.text, backgroundColor: theme.backgroundSelected },
                ]}
             />
 
-            <View style={styles.actions}>
-               <TouchableOpacity onPress={close} style={styles.cancelButton}>
+            <View style={sheetStyles.actions}>
+               <TouchableOpacity onPress={close} style={sheetStyles.cancelButton}>
                   <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                </TouchableOpacity>
                <TouchableOpacity
                   onPress={save}
-                  style={[styles.saveButton, { backgroundColor: theme.text }]}
+                  style={[sheetStyles.saveButton, { backgroundColor: theme.text }]}
                >
                   <ThemedText type="smallBold" style={{ color: theme.background }}>
                      Add
@@ -106,42 +106,3 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
       </Overlay>
    );
 }
-
-const styles = StyleSheet.create({
-   sheet: {
-      gap: Spacing.two,
-      width: 320,
-      padding: Spacing.four,
-      borderRadius: Spacing.three,
-   },
-   title: { marginBottom: Spacing.one },
-   label: {
-      marginTop: Spacing.two,
-      fontSize: 12,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-   },
-   input: {
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-      fontSize: 15,
-   },
-   actions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: Spacing.three,
-      marginTop: Spacing.four,
-   },
-   cancelButton: {
-      justifyContent: "center",
-      paddingHorizontal: Spacing.two,
-   },
-   saveButton: {
-      alignItems: "center",
-      paddingHorizontal: Spacing.five,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.three,
-   },
-});

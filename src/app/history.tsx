@@ -1,10 +1,16 @@
 import { usePowerSync } from "@powersync/react";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type DimensionValue, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { ThemedIconBadge } from "@/components/themed-icon-badge";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { resolveCategoryColor } from "@/constants/categories";
+import {
+   type CategoryTreeNode,
+   buildCategoryTree,
+   resolveCategoryColor,
+} from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { useTabNavigation } from "@/context/tab-navigation";
 import {
@@ -22,29 +28,6 @@ import { MonthPickerModal } from "@/features/journal/month-picker-modal";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
 import { currentYearMonth, formatMonthShort, formatMonthYear, shiftMonth } from "@/utils/date";
-
-type DashboardNode = {
-   category: CategoryRow;
-   depth: number;
-   children: DashboardNode[];
-};
-
-function buildTree(categories: CategoryRow[]): DashboardNode[] {
-   const byParent = new Map<string | null, CategoryRow[]>();
-   for (const c of categories) {
-      const list = byParent.get(c.parent_id) ?? [];
-      list.push(c);
-      byParent.set(c.parent_id, list);
-   }
-   function build(cats: CategoryRow[], depth: number): DashboardNode[] {
-      return cats.map((c) => ({
-         category: c,
-         depth,
-         children: build(byParent.get(c.id) ?? [], depth + 1),
-      }));
-   }
-   return build(byParent.get(null) ?? [], 0);
-}
 
 const WINDOW_OPTIONS = [1, 3, 6, 12] as const;
 
@@ -104,7 +87,7 @@ export default function DashboardScreen() {
    }, [expenses, windowStartDate, windowEndDate]);
 
    const tree = useMemo(() => {
-      const roots = buildTree(categories);
+      const roots: CategoryTreeNode<CategoryRow>[] = buildCategoryTree(categories);
       return filterGroupId == null
          ? roots
          : roots.filter((node) => node.category.id === filterGroupId);
@@ -138,7 +121,7 @@ export default function DashboardScreen() {
       });
    }
 
-   function renderNode(node: DashboardNode) {
+   function renderNode(node: CategoryTreeNode<CategoryRow>) {
       const state = budgetStateForWindow(
          categories,
          expenses,
@@ -216,9 +199,14 @@ export default function DashboardScreen() {
                </View>
 
                <View style={styles.monthNav}>
-                  <TouchableOpacity onPress={navigatePrev} style={styles.arrowButton}>
-                     <ThemedText themeColor="textSecondary">←</ThemedText>
-                  </TouchableOpacity>
+                  <ThemedIconBadge
+                     icon={ChevronLeft}
+                     onPress={navigatePrev}
+                     badgeThemeColor="text"
+                     badgeStyle={styles.arrowButton}
+                     themeColor="pureBackground"
+                     size="nav"
+                  />
 
                   <TouchableOpacity onPress={() => setShowMonthPicker(true)}>
                      <ThemedText type="smallBold">{formatMonthYear(year, month)} ▾</ThemedText>
@@ -237,13 +225,14 @@ export default function DashboardScreen() {
                         </ThemedText>
                      </TouchableOpacity>
                   ) : (
-                     <TouchableOpacity onPress={navigateNext} style={styles.arrowButton}>
-                        <ThemedText
-                           themeColor={isCurrentMonth ? "backgroundElement" : "textSecondary"}
-                        >
-                           →
-                        </ThemedText>
-                     </TouchableOpacity>
+                     <ThemedIconBadge
+                        icon={ChevronRight}
+                        onPress={navigateNext}
+                        badgeThemeColor="text"
+                        badgeStyle={styles.arrowButton}
+                        themeColor="pureBackground"
+                        size="nav"
+                     />
                   )}
                </View>
 
@@ -329,7 +318,10 @@ const styles = StyleSheet.create({
       alignItems: "center",
    },
    arrowButton: {
-      padding: Spacing.two,
+      justifyContent: "center",
+      alignItems: "center",
+      width: 24,
+      aspectRatio: 1,
    },
    todayPill: {
       paddingHorizontal: Spacing.two,

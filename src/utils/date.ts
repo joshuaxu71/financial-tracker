@@ -57,3 +57,11 @@ export function shiftMonth(
 export function formatMonthShort(year: number, month: number): string {
    return new Date(year, month - 1, 1).toLocaleDateString("en-US", { month: "short" });
 }
+
+export function monthKey(year: number, month: number): number {
+   return year * 12 + (month - 1);
+}
+
+export function fromMonthKey(key: number): { year: number; month: number } {
+   return { year: Math.floor(key / 12), month: (key % 12) + 1 };
+}

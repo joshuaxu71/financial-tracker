@@ -1,6 +1,8 @@
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { ThemedIconBadge } from "@/components/themed-icon-badge";
 import { ThemedText } from "@/components/themed-text";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -45,20 +47,24 @@ export function MonthPickerModal({
             <Pressable onPress={() => {}}>
                <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
                   <View style={styles.pickerYearNav}>
-                     <TouchableOpacity
+                     <ThemedIconBadge
+                        icon={ChevronLeft}
                         onPress={() => setPickerYear((y) => y - 1)}
-                        style={styles.navButton}
-                     >
-                        <ThemedText>←</ThemedText>
-                     </TouchableOpacity>
+                        badgeThemeColor="text"
+                        badgeStyle={styles.navButton}
+                        themeColor="pureBackground"
+                        size="nav"
+                     />
                      <ThemedText type="smallBold">{pickerYear}</ThemedText>
                      {canGoForward ? (
-                        <TouchableOpacity
+                        <ThemedIconBadge
+                           icon={ChevronRight}
                            onPress={() => setPickerYear((y) => y + 1)}
-                           style={styles.navButton}
-                        >
-                           <ThemedText>→</ThemedText>
-                        </TouchableOpacity>
+                           badgeThemeColor="text"
+                           badgeStyle={styles.navButton}
+                           themeColor="pureBackground"
+                           size="nav"
+                        />
                      ) : (
                         <View style={styles.navButton} />
                      )}

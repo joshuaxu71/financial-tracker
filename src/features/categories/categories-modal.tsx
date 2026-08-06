@@ -14,8 +14,13 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
-import { resolveCategoryColor } from "@/constants/categories";
+import {
+   type CategoryTreeNode,
+   buildCategoryTree,
+   resolveCategoryColor,
+} from "@/constants/categories";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
+import { sheetStyles } from "@/constants/sheet-styles";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import {
    type BudgetHistoryRow,
@@ -47,28 +52,7 @@ type Props = {
    onChanged: () => void;
 };
 
-type TreeNode = {
-   category: CategoryRow;
-   depth: number;
-   children: TreeNode[];
-};
-
-function buildTree(categories: readonly CategoryRow[]): TreeNode[] {
-   const byParent = new Map<string | null, CategoryRow[]>();
-   for (const c of categories) {
-      const list = byParent.get(c.parent_id) ?? [];
-      list.push(c);
-      byParent.set(c.parent_id, list);
-   }
-   function build(cats: CategoryRow[], depth: number): TreeNode[] {
-      return cats.map((c) => ({
-         category: c,
-         depth,
-         children: build(byParent.get(c.id) ?? [], depth + 1),
-      }));
-   }
-   return build(byParent.get(null) ?? [], 0);
-}
+type TreeNode = CategoryTreeNode<CategoryRow>;
 
 function budgetViolation(categories: readonly CategoryRow[]): string | null {
    const hasChildren = (id: string) => categories.some((c) => c.parent_id === id);
@@ -123,7 +107,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
    }, [db]);
 
-   const tree = useMemo(() => buildTree(categories), [categories]);
+   const tree = useMemo(() => buildCategoryTree(categories), [categories]);
 
    const descendants = useMemo(() => {
       const set = new Set<string>();
@@ -311,7 +295,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                onPress={() => (hasChildren ? toggle(node.category.id) : openEdit(node.category))}
                onLongPress={() => openEdit(node.category)}
             >
-               <View style={[styles.dot, { backgroundColor: dotColor }]} />
+               <View style={[sheetStyles.dot, { backgroundColor: dotColor }]} />
                <View style={styles.rowMain}>
                   <View style={styles.rowTop}>
                      <ThemedText style={styles.rowName} numberOfLines={1}>
@@ -397,12 +381,12 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
             {editor && (
                <Overlay visible onRequestClose={() => setEditor(null)}>
-                  <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         {editor.mode === "new" ? "New category" : `Edit ${editor.name}`}
                      </ThemedText>
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Name
                      </ThemedText>
                      <TextInput
@@ -411,27 +395,30 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         placeholder="e.g. Travel"
                         placeholderTextColor={theme.textSecondary}
                         style={[
-                           styles.input,
+                           sheetStyles.input,
                            { color: theme.text, backgroundColor: theme.backgroundSelected },
                         ]}
                         autoFocus
                      />
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Parent
                      </ThemedText>
                      <TouchableOpacity
-                        style={[styles.parentRow, { backgroundColor: theme.backgroundSelected }]}
+                        style={[
+                           sheetStyles.selectRow,
+                           { backgroundColor: theme.backgroundSelected },
+                        ]}
                         onPress={() => setShowParentPicker(true)}
                      >
                         <ThemedText>{parentName}</ThemedText>
                         <ThemedText themeColor="textSecondary">▾</ThemedText>
                      </TouchableOpacity>
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Color
                      </ThemedText>
-                     <View style={styles.swatchRow}>
+                     <View style={sheetStyles.swatchRow}>
                         {editor.parentId !== null && (
                            <TouchableOpacity
                               style={[
@@ -442,7 +429,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            >
                               <ThemedText
                                  type="small"
-                                 style={editor.color === null && styles.selectedText}
+                                 style={editor.color === null && sheetStyles.selectedText}
                               >
                                  Inherit
                               </ThemedText>
@@ -452,16 +439,16 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            <TouchableOpacity
                               key={c}
                               style={[
-                                 styles.swatch,
+                                 sheetStyles.swatch,
                                  { backgroundColor: c },
-                                 editor.color === c && styles.swatchSelected,
+                                 editor.color === c && sheetStyles.swatchSelected,
                               ]}
                               onPress={() => setEditor({ ...editor, color: c })}
                            />
                         ))}
                      </View>
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Monthly budget
                      </ThemedText>
                      <TextInput
@@ -473,7 +460,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="decimal-pad"
                         style={[
-                           styles.input,
+                           sheetStyles.input,
                            { color: theme.text, backgroundColor: theme.backgroundSelected },
                         ]}
                      />
@@ -495,17 +482,20 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            </TouchableOpacity>
                         )}
 
-                     <View style={styles.sheetActions}>
+                     <View style={sheetStyles.actions}>
                         {editor.mode === "edit" && (
-                           <TouchableOpacity onPress={confirmDelete} style={styles.deleteButton}>
-                              <ThemedText type="smallBold" style={styles.deleteText}>
+                           <TouchableOpacity
+                              onPress={confirmDelete}
+                              style={sheetStyles.deleteButton}
+                           >
+                              <ThemedText type="smallBold" style={sheetStyles.deleteText}>
                                  Delete
                               </ThemedText>
                            </TouchableOpacity>
                         )}
                         <TouchableOpacity
                            onPress={save}
-                           style={[styles.saveButton, { backgroundColor: theme.text }]}
+                           style={[sheetStyles.saveButton, { backgroundColor: theme.text }]}
                         >
                            <ThemedText type="smallBold" style={{ color: theme.background }}>
                               Save
@@ -518,8 +508,8 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
             {showParentPicker && editor && (
                <Overlay visible onRequestClose={() => setShowParentPicker(false)}>
-                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         Parent
                      </ThemedText>
                      <TouchableOpacity
@@ -529,7 +519,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            setShowParentPicker(false);
                         }}
                      >
-                        <ThemedText style={editor.parentId === null && styles.selectedText}>
+                        <ThemedText style={editor.parentId === null && sheetStyles.selectedText}>
                            None (top level)
                         </ThemedText>
                         {editor.parentId === null && (
@@ -551,11 +541,11 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                                     setShowParentPicker(false);
                                  }}
                               >
-                                 <View style={[styles.dot, { backgroundColor: color }]} />
+                                 <View style={[sheetStyles.dot, { backgroundColor: color }]} />
                                  <ThemedText
                                     style={[
-                                       styles.pickerLabel,
-                                       editor.parentId === c.id && styles.selectedText,
+                                       sheetStyles.pickerLabel,
+                                       editor.parentId === c.id && sheetStyles.selectedText,
                                     ]}
                                  >
                                     {c.name}
@@ -572,11 +562,11 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
             {showReassign && editor && (
                <Overlay visible onRequestClose={() => setShowReassign(false)}>
-                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
-                     <ThemedText themeColor="textSecondary" style={styles.sheetSubtitle}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.subtitle}>
                         Deleting &quot;{editor.name}&quot; — choose where its expenses go.
                      </ThemedText>
                      {reassignTargets.map((c) => {
@@ -587,8 +577,8 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                               style={styles.pickerRow}
                               onPress={() => reassignAndDelete(c.id)}
                            >
-                              <View style={[styles.dot, { backgroundColor: color }]} />
-                              <ThemedText style={styles.pickerLabel}>{c.name}</ThemedText>
+                              <View style={[sheetStyles.dot, { backgroundColor: color }]} />
+                              <ThemedText style={sheetStyles.pickerLabel}>{c.name}</ThemedText>
                            </TouchableOpacity>
                         );
                      })}
@@ -651,23 +641,11 @@ const styles = StyleSheet.create({
       height: "100%",
       borderRadius: 2,
    },
-   dot: {
-      flexShrink: 0,
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-   },
+
    rowName: { flex: 1, fontSize: 15 },
    count: { fontSize: 12 },
    editHint: { fontSize: 12 },
-   sheet: {
-      gap: Spacing.two,
-      width: 320,
-      padding: Spacing.four,
-      borderRadius: Spacing.three,
-   },
-   sheetTitle: { marginBottom: Spacing.one },
-   sheetSubtitle: { marginBottom: Spacing.two },
+
    budgetHint: {
       marginBottom: Spacing.one,
       fontSize: 11,
@@ -677,71 +655,14 @@ const styles = StyleSheet.create({
       paddingVertical: Spacing.two,
    },
    resetText: { color: "#FF453A" },
-   label: {
-      marginTop: Spacing.two,
-      fontSize: 12,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-   },
-   input: {
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-      fontSize: 15,
-   },
-   parentRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-   },
-   swatchRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: Spacing.two,
-      marginTop: Spacing.one,
-   },
+
    inheritChip: {
       justifyContent: "center",
       paddingHorizontal: Spacing.two,
       paddingVertical: Spacing.one,
       borderRadius: Spacing.two,
    },
-   swatch: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-   },
-   swatchSelected: {
-      borderWidth: 2,
-      borderColor: "#fff",
-   },
-   sheetActions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      gap: Spacing.three,
-      marginTop: Spacing.four,
-   },
-   deleteButton: {
-      justifyContent: "center",
-      paddingHorizontal: Spacing.two,
-   },
-   deleteText: { color: "#FF453A" },
-   saveButton: {
-      alignItems: "center",
-      paddingHorizontal: Spacing.five,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.three,
-   },
-   selectedText: { fontFamily: "Urbanist-Bold" },
-   picker: {
-      width: 280,
-      maxHeight: 420,
-      padding: Spacing.three,
-      borderRadius: Spacing.three,
-   },
+
    pickerRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -749,5 +670,4 @@ const styles = StyleSheet.create({
       paddingHorizontal: Spacing.one,
       paddingVertical: Spacing.two,
    },
-   pickerLabel: { flex: 1 },
 });

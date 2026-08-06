@@ -16,6 +16,7 @@ import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { CURRENCIES, currencyName } from "@/constants/currencies";
+import { sheetStyles } from "@/constants/sheet-styles";
 import { BottomTabInset, Spacing } from "@/constants/theme";
 import {
    type SourceRow,
@@ -188,7 +189,10 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            onPress={() => openEdit(item)}
                         >
                            <View
-                              style={[styles.dot, { backgroundColor: item.color ?? "#888888" }]}
+                              style={[
+                                 sheetStyles.dot,
+                                 { backgroundColor: item.color ?? "#888888" },
+                              ]}
                            />
                            <View style={styles.rowMain}>
                               <ThemedText style={styles.rowName} numberOfLines={1}>
@@ -215,12 +219,12 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
 
             {editor && (
                <Overlay visible onRequestClose={() => setEditor(null)}>
-                  <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         {editor.mode === "new" ? "New source" : `Edit ${editor.name}`}
                      </ThemedText>
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Name
                      </ThemedText>
                      <TextInput
@@ -229,17 +233,20 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         placeholder="e.g. Wise, Rakuten, Credit Card"
                         placeholderTextColor={theme.textSecondary}
                         style={[
-                           styles.input,
+                           sheetStyles.input,
                            { color: theme.text, backgroundColor: theme.backgroundSelected },
                         ]}
                         autoFocus
                      />
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Currency
                      </ThemedText>
                      <TouchableOpacity
-                        style={[styles.parentRow, { backgroundColor: theme.backgroundSelected }]}
+                        style={[
+                           sheetStyles.selectRow,
+                           { backgroundColor: theme.backgroundSelected },
+                        ]}
                         onPress={() => setShowCurrencyPicker(true)}
                      >
                         <ThemedText>
@@ -248,7 +255,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         <ThemedText themeColor="textSecondary">▾</ThemedText>
                      </TouchableOpacity>
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Opening balance
                      </ThemedText>
                      <TextInput
@@ -258,39 +265,42 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         placeholderTextColor={theme.textSecondary}
                         keyboardType="decimal-pad"
                         style={[
-                           styles.input,
+                           sheetStyles.input,
                            { color: theme.text, backgroundColor: theme.backgroundSelected },
                         ]}
                      />
 
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Color
                      </ThemedText>
-                     <View style={styles.swatchRow}>
+                     <View style={sheetStyles.swatchRow}>
                         {CATEGORY_COLORS.map((c) => (
                            <TouchableOpacity
                               key={c}
                               style={[
-                                 styles.swatch,
+                                 sheetStyles.swatch,
                                  { backgroundColor: c },
-                                 editor.color === c && styles.swatchSelected,
+                                 editor.color === c && sheetStyles.swatchSelected,
                               ]}
                               onPress={() => setEditor({ ...editor, color: c })}
                            />
                         ))}
                      </View>
 
-                     <View style={styles.sheetActions}>
+                     <View style={sheetStyles.actions}>
                         {editor.mode === "edit" && (
-                           <TouchableOpacity onPress={confirmDelete} style={styles.deleteButton}>
-                              <ThemedText type="smallBold" style={styles.deleteText}>
+                           <TouchableOpacity
+                              onPress={confirmDelete}
+                              style={sheetStyles.deleteButton}
+                           >
+                              <ThemedText type="smallBold" style={sheetStyles.deleteText}>
                                  Delete
                               </ThemedText>
                            </TouchableOpacity>
                         )}
                         <TouchableOpacity
                            onPress={save}
-                           style={[styles.saveButton, { backgroundColor: theme.text }]}
+                           style={[sheetStyles.saveButton, { backgroundColor: theme.text }]}
                         >
                            <ThemedText type="smallBold" style={{ color: theme.background }}>
                               Save
@@ -303,15 +313,15 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
 
             {showCurrencyPicker && editor && (
                <Overlay visible onRequestClose={() => setShowCurrencyPicker(false)}>
-                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         Currency
                      </ThemedText>
                      <ScrollView style={styles.currencyList} nestedScrollEnabled>
                         {CURRENCIES.map((c) => (
                            <TouchableOpacity
                               key={c.code}
-                              style={styles.pickerRow}
+                              style={sheetStyles.pickerRow}
                               onPress={() => {
                                  setEditor({ ...editor, currency: c.code });
                                  setShowCurrencyPicker(false);
@@ -319,8 +329,8 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            >
                               <ThemedText
                                  style={[
-                                    styles.pickerLabel,
-                                    editor.currency === c.code && styles.selectedText,
+                                    sheetStyles.pickerLabel,
+                                    editor.currency === c.code && sheetStyles.selectedText,
                                  ]}
                               >
                                  {c.code} · {c.name}
@@ -337,28 +347,30 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
 
             {showReassign && editor && (
                <Overlay visible onRequestClose={() => setShowReassign(false)}>
-                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
-                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
-                     <ThemedText themeColor="textSecondary" style={styles.sheetSubtitle}>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.subtitle}>
                         Deleting &quot;{editor.name}&quot; — choose where its expenses go.
                      </ThemedText>
                      {reassignTargets.map((s) => (
                         <TouchableOpacity
                            key={s.id}
-                           style={styles.pickerRow}
+                           style={sheetStyles.pickerRow}
                            onPress={() => reassignAndDelete(s.id)}
                         >
-                           <View style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]} />
-                           <ThemedText style={styles.pickerLabel}>{s.name}</ThemedText>
+                           <View
+                              style={[sheetStyles.dot, { backgroundColor: s.color ?? "#888888" }]}
+                           />
+                           <ThemedText style={sheetStyles.pickerLabel}>{s.name}</ThemedText>
                            <ThemedText themeColor="textSecondary" type="small">
                               {s.currency}
                            </ThemedText>
                         </TouchableOpacity>
                      ))}
                      <TouchableOpacity
-                        style={styles.pickerRow}
+                        style={sheetStyles.pickerRow}
                         onPress={() => setShowReassign(false)}
                      >
                         <ThemedText themeColor="textSecondary">Cancel</ThemedText>
@@ -401,89 +413,9 @@ const styles = StyleSheet.create({
    },
    rowMain: { flex: 1, gap: Spacing.half, minWidth: 0 },
    rowName: { fontSize: 15 },
-   dot: {
-      flexShrink: 0,
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-   },
-   sheet: {
-      gap: Spacing.two,
-      width: 320,
-      padding: Spacing.four,
-      borderRadius: Spacing.three,
-   },
-   sheetTitle: { marginBottom: Spacing.one },
-   sheetSubtitle: { marginBottom: Spacing.two },
-   label: {
-      marginTop: Spacing.two,
-      fontSize: 12,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-   },
-   input: {
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-      fontSize: 15,
-   },
-   parentRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingHorizontal: Spacing.three,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.two,
-   },
    currencyList: {
       maxHeight: 220,
       marginTop: Spacing.one,
       borderRadius: Spacing.two,
    },
-   swatchRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: Spacing.two,
-      marginTop: Spacing.one,
-   },
-   swatch: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-   },
-   swatchSelected: {
-      borderWidth: 2,
-      borderColor: "#fff",
-   },
-   sheetActions: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      gap: Spacing.three,
-      marginTop: Spacing.four,
-   },
-   deleteButton: {
-      justifyContent: "center",
-      paddingHorizontal: Spacing.two,
-   },
-   deleteText: { color: "#FF453A" },
-   saveButton: {
-      alignItems: "center",
-      paddingHorizontal: Spacing.five,
-      paddingVertical: Spacing.two,
-      borderRadius: Spacing.three,
-   },
-   selectedText: { fontFamily: "Urbanist-Bold" },
-   picker: {
-      width: 280,
-      maxHeight: 420,
-      padding: Spacing.three,
-      borderRadius: Spacing.three,
-   },
-   pickerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.two,
-      paddingVertical: Spacing.two,
-   },
-   pickerLabel: { flex: 1 },
 });
