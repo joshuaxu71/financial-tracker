@@ -4,6 +4,7 @@ import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from "react-nati
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { sheetStyles } from "@/constants/sheet-styles";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
@@ -108,7 +109,7 @@ export function TransferModal({
 
    return (
       <Overlay visible={visible} onRequestClose={close}>
-         <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+         <ThemedView themeColor="backgroundElement" style={sheetStyles.sheet}>
             <ThemedText type="smallBold" style={sheetStyles.title}>
                {transfer ? `Edit transfer · ${active.name}` : `Transfer · ${active.name}`}
             </ThemedText>
@@ -205,7 +206,7 @@ export function TransferModal({
                   </ThemedText>
                </TouchableOpacity>
             </View>
-         </View>
+         </ThemedView>
       </Overlay>
    );
 }

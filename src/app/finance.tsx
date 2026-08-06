@@ -95,7 +95,7 @@ export default function FinanceScreen() {
                   </View>
                </View>
 
-               <ThemedView type="backgroundElement" style={styles.netWorthCard}>
+               <ThemedView themeColor="backgroundElement" style={styles.netWorthCard}>
                   <ThemedText type="small" themeColor="textSecondary">
                      Net worth
                   </ThemedText>
@@ -121,9 +121,9 @@ export default function FinanceScreen() {
                            activeOpacity={0.7}
                            onPress={() => setDetailSource(s)}
                         >
-                           <ThemedView type="backgroundElement" style={styles.sourceCard}>
+                           <ThemedView themeColor="backgroundElement" style={styles.sourceCard}>
                               <View style={styles.sourceHeader}>
-                                 <View
+                                 <ThemedView
                                     style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]}
                                  />
                                  <View style={styles.sourceTitle}>

@@ -292,7 +292,7 @@ export default function TrackScreen() {
                   sections={sections}
                   keyExtractor={(item) => item.id}
                   renderSectionHeader={({ section }) => (
-                     <View style={[styles.sectionHeader, { backgroundColor: theme.background }]}>
+                     <ThemedView themeColor="background" style={styles.sectionHeader}>
                         <ThemedText type="smallBold">{section.title}</ThemedText>
                         {section.dailyTotal > 0 && (
                            <ThemedText themeColor="textSecondary">
@@ -302,7 +302,7 @@ export default function TrackScreen() {
                               })}
                            </ThemedText>
                         )}
-                     </View>
+                     </ThemedView>
                   )}
                   renderItem={({ item }) => (
                      <SavedExpenseRow

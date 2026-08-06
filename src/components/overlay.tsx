@@ -1,6 +1,8 @@
-import { type PropsWithChildren, useEffect, useState } from "react";
-import { Animated, Pressable, StyleSheet } from "react-native";
+import { type PropsWithChildren } from "react";
+import { Pressable, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { ThemedView } from "@/components/themed-view";
 
 type OverlayProps = PropsWithChildren<{
    visible: boolean;
@@ -8,32 +10,8 @@ type OverlayProps = PropsWithChildren<{
 }>;
 
 export function Overlay({ visible, onRequestClose, children }: OverlayProps) {
-   const [mounted, setMounted] = useState(visible);
-   const [opacity] = useState(() => new Animated.Value(visible ? 1 : 0));
-
-   useEffect(() => {
-      if (visible) {
-         setMounted(true);
-         Animated.timing(opacity, {
-            toValue: 1,
-            duration: 150,
-            useNativeDriver: true,
-         }).start();
-      } else {
-         Animated.timing(opacity, {
-            toValue: 0,
-            duration: 150,
-            useNativeDriver: true,
-         }).start(({ finished }) => {
-            if (finished) setMounted(false);
-         });
-      }
-   }, [visible, opacity]);
-
-   if (!mounted) return null;
-
    return (
-      <Animated.View style={[StyleSheet.absoluteFill, styles.root, { opacity }]}>
+      <ThemedView visible={visible} fadeAnimation fadeDurationMs={150} style={styles.root}>
          <Pressable style={styles.backdrop} onPress={onRequestClose}>
             <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
                <Pressable style={styles.content} onPress={(e) => e.stopPropagation()}>
@@ -41,12 +19,17 @@ export function Overlay({ visible, onRequestClose, children }: OverlayProps) {
                </Pressable>
             </SafeAreaView>
          </Pressable>
-      </Animated.View>
+      </ThemedView>
    );
 }
 
 const styles = StyleSheet.create({
    root: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
       zIndex: 10,
       elevation: 10,
    },

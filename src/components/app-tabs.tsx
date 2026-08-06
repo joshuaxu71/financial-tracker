@@ -7,6 +7,7 @@ import FinanceScreen from "@/app/finance";
 import HistoryScreen from "@/app/history";
 import TrackScreen from "@/app/index";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import {
    DASHBOARD_INDEX,
    FINANCE_INDEX,
@@ -34,19 +35,19 @@ export default function AppTabs() {
    ];
 
    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-         <View
+      <ThemedView themeColor="background" style={styles.container}>
+         <ThemedView
+            themeColor="pureBackground"
             style={[
                styles.header,
                {
-                  backgroundColor: theme.pureBackground,
                   height: insets.top + screenHeight * 0.06,
                   paddingBottom: screenHeight * 0.02,
                },
             ]}
          >
             <ThemedText style={styles.headerTitle}>{TAB_LABELS[activeIndex]}</ThemedText>
-         </View>
+         </ThemedView>
 
          <PagerView
             ref={pagerRef}
@@ -65,11 +66,11 @@ export default function AppTabs() {
             </View>
          </PagerView>
 
-         <View
+         <ThemedView
+            themeColor="pureBackground"
             style={[
                styles.tabBar,
                {
-                  backgroundColor: theme.pureBackground,
                   marginBottom: isIos ? 16 : insets.bottom || 16,
                },
             ]}
@@ -89,8 +90,8 @@ export default function AppTabs() {
                   </Pressable>
                );
             })}
-         </View>
-      </View>
+         </ThemedView>
+      </ThemedView>
    );
 }
 

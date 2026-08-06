@@ -4,6 +4,7 @@ import { Alert, TextInput, TouchableOpacity, View } from "react-native";
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { sheetStyles } from "@/constants/sheet-styles";
 import { type SourceRow, insertIncome } from "@/db/sources";
 import { useTheme } from "@/hooks/use-theme";
@@ -52,7 +53,7 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
 
    return (
       <Overlay visible={visible} onRequestClose={close}>
-         <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+         <ThemedView themeColor="backgroundElement" style={sheetStyles.sheet}>
             <ThemedText type="smallBold" style={sheetStyles.title}>
                Add money · {source.name}
             </ThemedText>
@@ -102,7 +103,7 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
                   </ThemedText>
                </TouchableOpacity>
             </View>
-         </View>
+         </ThemedView>
       </Overlay>
    );
 }

@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
@@ -93,13 +94,13 @@ export function JournalEntryRow({
             onPress={() => setShowSourcePicker(true)}
             accessibilityLabel={`Source ${source?.name ?? "?"}`}
          >
-            <View style={[styles.sourceDot, { backgroundColor: sourceColor }]} />
+            <ThemedView style={[styles.sourceDot, { backgroundColor: sourceColor }]} />
          </TouchableOpacity>
          <TouchableOpacity
             style={styles.categoryButton}
             onPress={() => setShowCategoryPicker(true)}
          >
-            <View style={[styles.dot, { backgroundColor: dotColor }]} />
+            <ThemedView style={[styles.dot, { backgroundColor: dotColor }]} />
             <ThemedText themeColor="textSecondary" style={styles.categoryLabel} numberOfLines={1}>
                {category?.name ?? "?"}
             </ThemedText>

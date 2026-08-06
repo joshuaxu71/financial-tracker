@@ -14,6 +14,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { CURRENCIES, currencyName } from "@/constants/currencies";
 import { sheetStyles } from "@/constants/sheet-styles";
@@ -219,7 +220,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
 
             {editor && (
                <Overlay visible onRequestClose={() => setEditor(null)}>
-                  <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.sheet}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         {editor.mode === "new" ? "New source" : `Edit ${editor.name}`}
                      </ThemedText>
@@ -307,13 +308,13 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            </ThemedText>
                         </TouchableOpacity>
                      </View>
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
 
             {showCurrencyPicker && editor && (
                <Overlay visible onRequestClose={() => setShowCurrencyPicker(false)}>
-                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.picker}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         Currency
                      </ThemedText>
@@ -341,13 +342,13 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            </TouchableOpacity>
                         ))}
                      </ScrollView>
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
 
             {showReassign && editor && (
                <Overlay visible onRequestClose={() => setShowReassign(false)}>
-                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.picker}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
@@ -360,7 +361,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                            style={sheetStyles.pickerRow}
                            onPress={() => reassignAndDelete(s.id)}
                         >
-                           <View
+                           <ThemedView
                               style={[sheetStyles.dot, { backgroundColor: s.color ?? "#888888" }]}
                            />
                            <ThemedText style={sheetStyles.pickerLabel}>{s.name}</ThemedText>
@@ -375,7 +376,7 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                      >
                         <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                      </TouchableOpacity>
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
          </SafeAreaProvider>

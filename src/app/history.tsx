@@ -150,7 +150,7 @@ export default function DashboardScreen() {
                <ThemedText type="small" themeColor="textSecondary" style={styles.chevron}>
                   {hasChildren ? (isOpen ? "▾" : "▸") : " "}
                </ThemedText>
-               <View style={[styles.dot, { backgroundColor: dotColor }]} />
+               <ThemedView style={[styles.dot, { backgroundColor: dotColor }]} />
                <ThemedText type="smallBold" numberOfLines={1} style={styles.nodeName}>
                   {node.category.name}
                </ThemedText>
@@ -159,13 +159,11 @@ export default function DashboardScreen() {
 
             {hasBudget && (
                <View style={[styles.budgetRow, { paddingLeft: node.depth * Spacing.four }]}>
-                  <View
-                     style={[
-                        styles.progressTrack,
-                        { marginLeft: Spacing.four, backgroundColor: theme.backgroundSelected },
-                     ]}
+                  <ThemedView
+                     themeColor="backgroundSelected"
+                     style={[styles.progressTrack, { marginLeft: Spacing.four }]}
                   >
-                     <View
+                     <ThemedView
                         style={[
                            styles.progressFill,
                            {
@@ -174,7 +172,7 @@ export default function DashboardScreen() {
                            },
                         ]}
                      />
-                  </View>
+                  </ThemedView>
                   <ThemedText type="small" themeColor={isOver ? "text" : "textSecondary"}>
                      {formatAmount(spent)} / {formatAmount(available)}
                   </ThemedText>
@@ -265,7 +263,7 @@ export default function DashboardScreen() {
                   onChange={setFilterGroupId}
                />
 
-               <ThemedView type="backgroundElement" style={styles.summaryCard}>
+               <ThemedView themeColor="backgroundElement" style={styles.summaryCard}>
                   <ThemedText type="small" themeColor="textSecondary">
                      {windowLabel}
                   </ThemedText>

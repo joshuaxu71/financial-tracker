@@ -1,6 +1,7 @@
-import { Alert, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { formatCurrencyAmount } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
@@ -34,7 +35,7 @@ export function SavedExpenseRow({ expense, categories, sources, onDelete }: Prop
          <ThemedText themeColor="backgroundSelected" style={styles.handle}>
             ⠿
          </ThemedText>
-         <View style={[styles.dot, { backgroundColor: dotColor }]} />
+         <ThemedView style={[styles.dot, { backgroundColor: dotColor }]} />
          <ThemedText style={styles.categoryName} numberOfLines={1}>
             {category?.name ?? "?"}
          </ThemedText>

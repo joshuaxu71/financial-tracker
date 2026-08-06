@@ -121,7 +121,7 @@ export function SourceDetailModal({
                   </View>
                </View>
 
-               <ThemedView type="backgroundElement" style={styles.balanceCard}>
+               <ThemedView themeColor="backgroundElement" style={styles.balanceCard}>
                   <ThemedText type="small" themeColor="textSecondary">
                      {active.currency}
                   </ThemedText>

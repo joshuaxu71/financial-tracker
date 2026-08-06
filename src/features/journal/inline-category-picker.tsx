@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import {
    type Category,
    type CategoryTreeNode,
@@ -9,7 +10,6 @@ import {
    resolveCategoryColor,
 } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
-import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
    visible: boolean;
@@ -28,7 +28,6 @@ export function InlineCategoryPicker({
    onSelect,
    onDismiss,
 }: Props) {
-   const theme = useTheme();
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
    const tree = buildCategoryTree(categories);
@@ -68,7 +67,7 @@ export function InlineCategoryPicker({
                      {isExpanded ? "▾" : "▸"}
                   </ThemedText>
                ) : (
-                  <View style={[styles.dot, { backgroundColor: color }]} />
+                  <ThemedView style={[styles.dot, { backgroundColor: color }]} />
                )}
                <ThemedText style={[styles.rowLabel, isSelected && styles.selectedLabel]}>
                   {node.category.name}
@@ -88,8 +87,9 @@ export function InlineCategoryPicker({
    return (
       <Modal visible={visible} transparent animationType="fade" onRequestClose={handleDismiss}>
          <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={handleDismiss}>
-            <View
-               style={[styles.container, { backgroundColor: theme.backgroundElement }]}
+            <ThemedView
+               themeColor="backgroundElement"
+               style={styles.container}
                onStartShouldSetResponder={() => true}
             >
                <ThemedText type="smallBold" style={styles.header}>
@@ -98,7 +98,7 @@ export function InlineCategoryPicker({
                <ScrollView style={styles.scroll} nestedScrollEnabled>
                   {tree.map((n) => renderNode(n, 0))}
                </ScrollView>
-            </View>
+            </ThemedView>
          </TouchableOpacity>
       </Modal>
    );

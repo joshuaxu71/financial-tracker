@@ -2,8 +2,10 @@ import { PowerSyncContext } from "@powersync/react";
 import { PowerSyncDatabase } from "@powersync/react-native";
 import type { PropsWithChildren } from "react";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet } from "react-native";
 
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/hooks/use-theme";
 
 import { AppSchema } from "./AppSchema";
@@ -79,15 +81,19 @@ export const SystemProvider = ({ children }: PropsWithChildren) => {
 function Fallback({ message, onRetry }: { message: string; onRetry?: () => void }) {
    const theme = useTheme();
    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <ThemedView themeColor="background" style={styles.container}>
          <ActivityIndicator color={theme.trackFocused} />
-         <Text style={[styles.text, { color: theme.textSecondary }]}>{message}</Text>
+         <ThemedText themeColor="textSecondary" style={styles.text}>
+            {message}
+         </ThemedText>
          {onRetry && (
             <Pressable onPress={onRetry} style={styles.button}>
-               <Text style={[styles.buttonText, { color: theme.trackFocused }]}>Retry</Text>
+               <ThemedText themeColor="trackFocused" style={styles.buttonText}>
+                  Retry
+               </ThemedText>
             </Pressable>
          )}
-      </View>
+      </ThemedView>
    );
 }
 

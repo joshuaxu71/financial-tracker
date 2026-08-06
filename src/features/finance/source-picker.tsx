@@ -1,9 +1,9 @@
-import { Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
-import { useTheme } from "@/hooks/use-theme";
 
 type Props = {
    visible: boolean;
@@ -14,13 +14,12 @@ type Props = {
 };
 
 export function SourcePicker({ visible, sources, selectedSourceId, onSelect, onDismiss }: Props) {
-   const theme = useTheme();
-
    return (
       <Modal transparent animationType="fade" visible={visible} onRequestClose={onDismiss}>
          <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onDismiss}>
-            <View
-               style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}
+            <ThemedView
+               themeColor="backgroundElement"
+               style={styles.sheet}
                onStartShouldSetResponder={() => true}
             >
                <ThemedText type="smallBold" style={styles.title}>
@@ -38,7 +37,9 @@ export function SourcePicker({ visible, sources, selectedSourceId, onSelect, onD
                               onDismiss();
                            }}
                         >
-                           <View style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]} />
+                           <ThemedView
+                              style={[styles.dot, { backgroundColor: s.color ?? "#888888" }]}
+                           />
                            <ThemedText
                               style={[styles.label, selected && styles.selectedText]}
                               numberOfLines={1}
@@ -53,7 +54,7 @@ export function SourcePicker({ visible, sources, selectedSourceId, onSelect, onD
                      );
                   })}
                </ScrollView>
-            </View>
+            </ThemedView>
          </TouchableOpacity>
       </Modal>
    );

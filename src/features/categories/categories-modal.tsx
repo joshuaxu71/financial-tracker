@@ -14,6 +14,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import {
    type CategoryTreeNode,
    buildCategoryTree,
@@ -295,7 +296,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                onPress={() => (hasChildren ? toggle(node.category.id) : openEdit(node.category))}
                onLongPress={() => openEdit(node.category)}
             >
-               <View style={[sheetStyles.dot, { backgroundColor: dotColor }]} />
+               <ThemedView style={[sheetStyles.dot, { backgroundColor: dotColor }]} />
                <View style={styles.rowMain}>
                   <View style={styles.rowTop}>
                      <ThemedText style={styles.rowName} numberOfLines={1}>
@@ -323,13 +324,8 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         >
                            {formatAmount(spent)} / {formatAmount(available)}
                         </ThemedText>
-                        <View
-                           style={[
-                              styles.budgetTrack,
-                              { backgroundColor: theme.backgroundSelected },
-                           ]}
-                        >
-                           <View
+                        <ThemedView themeColor="backgroundSelected" style={styles.budgetTrack}>
+                           <ThemedView
                               style={[
                                  styles.budgetFill,
                                  {
@@ -338,7 +334,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                                  },
                               ]}
                            />
-                        </View>
+                        </ThemedView>
                      </View>
                   )}
                </View>
@@ -381,7 +377,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
             {editor && (
                <Overlay visible onRequestClose={() => setEditor(null)}>
-                  <View style={[sheetStyles.sheet, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.sheet}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         {editor.mode === "new" ? "New category" : `Edit ${editor.name}`}
                      </ThemedText>
@@ -502,13 +498,13 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            </ThemedText>
                         </TouchableOpacity>
                      </View>
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
 
             {showParentPicker && editor && (
                <Overlay visible onRequestClose={() => setShowParentPicker(false)}>
-                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.picker}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         Parent
                      </ThemedText>
@@ -541,7 +537,9 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                                     setShowParentPicker(false);
                                  }}
                               >
-                                 <View style={[sheetStyles.dot, { backgroundColor: color }]} />
+                                 <ThemedView
+                                    style={[sheetStyles.dot, { backgroundColor: color }]}
+                                 />
                                  <ThemedText
                                     style={[
                                        sheetStyles.pickerLabel,
@@ -556,13 +554,13 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                               </TouchableOpacity>
                            );
                         })}
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
 
             {showReassign && editor && (
                <Overlay visible onRequestClose={() => setShowReassign(false)}>
-                  <View style={[sheetStyles.picker, { backgroundColor: theme.backgroundElement }]}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.picker}>
                      <ThemedText type="smallBold" style={sheetStyles.title}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
@@ -577,7 +575,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                               style={styles.pickerRow}
                               onPress={() => reassignAndDelete(c.id)}
                            >
-                              <View style={[sheetStyles.dot, { backgroundColor: color }]} />
+                              <ThemedView style={[sheetStyles.dot, { backgroundColor: color }]} />
                               <ThemedText style={sheetStyles.pickerLabel}>{c.name}</ThemedText>
                            </TouchableOpacity>
                         );
@@ -588,7 +586,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                      >
                         <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                      </TouchableOpacity>
-                  </View>
+                  </ThemedView>
                </Overlay>
             )}
          </SafeAreaProvider>

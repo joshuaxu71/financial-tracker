@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, TouchableOpacity, View } from "react-nati
 
 import { ThemedIconBadge } from "@/components/themed-icon-badge";
 import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
 import { useTheme } from "@/hooks/use-theme";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -45,7 +46,7 @@ export function MonthPickerModal({
       <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
          <Pressable style={styles.backdrop} onPress={onDismiss}>
             <Pressable onPress={() => {}}>
-               <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+               <ThemedView themeColor="backgroundElement" style={styles.sheet}>
                   <View style={styles.pickerYearNav}>
                      <ThemedIconBadge
                         icon={ChevronLeft}
@@ -100,7 +101,7 @@ export function MonthPickerModal({
                         );
                      })}
                   </View>
-               </View>
+               </ThemedView>
             </Pressable>
          </Pressable>
       </Modal>
