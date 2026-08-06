@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 
+import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { useTheme } from "@/hooks/use-theme";
@@ -41,68 +42,57 @@ export function MonthPickerModal({
    const canGoForward = pickerYear < maxYear;
 
    return (
-      <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onDismiss}>
-            <View
-               style={[styles.container, { backgroundColor: theme.backgroundElement }]}
-               onStartShouldSetResponder={() => true}
-            >
-               <View style={styles.yearRow}>
-                  <TouchableOpacity
-                     onPress={() => setPickerYear((y) => y - 1)}
-                     style={styles.navButton}
-                  >
-                     <ThemedText>←</ThemedText>
-                  </TouchableOpacity>
-                  <ThemedText type="smallBold">{pickerYear}</ThemedText>
-                  <TouchableOpacity
-                     onPress={() => canGoForward && setPickerYear((y) => y + 1)}
-                     style={styles.navButton}
-                     disabled={!canGoForward}
-                  >
-                     <ThemedText themeColor={canGoForward ? "text" : "backgroundSelected"}>
-                        →
-                     </ThemedText>
-                  </TouchableOpacity>
-               </View>
-               <View style={styles.grid}>
-                  {MONTHS.map((label, i) => {
-                     const m = i + 1;
-                     const disabled = pickerYear === maxYear && m > maxMonth;
-                     const selected = pickerYear === year && m === month;
-                     return (
-                        <TouchableOpacity
-                           key={m}
-                           style={[styles.monthCell, selected && { backgroundColor: theme.text }]}
-                           onPress={() => handleMonthPress(m)}
-                           disabled={disabled}
-                        >
-                           <ThemedText
-                              style={[
-                                 styles.monthLabel,
-                                 disabled && { color: theme.backgroundSelected },
-                                 selected && { color: theme.background },
-                              ]}
-                           >
-                              {label}
-                           </ThemedText>
-                        </TouchableOpacity>
-                     );
-                  })}
-               </View>
+      <Overlay visible={visible} onRequestClose={onDismiss}>
+         <View style={[styles.container, { backgroundColor: theme.backgroundElement }]}>
+            <View style={styles.yearRow}>
+               <TouchableOpacity
+                  onPress={() => setPickerYear((y) => y - 1)}
+                  style={styles.navButton}
+               >
+                  <ThemedText>←</ThemedText>
+               </TouchableOpacity>
+               <ThemedText type="smallBold">{pickerYear}</ThemedText>
+               <TouchableOpacity
+                  onPress={() => canGoForward && setPickerYear((y) => y + 1)}
+                  style={styles.navButton}
+                  disabled={!canGoForward}
+               >
+                  <ThemedText themeColor={canGoForward ? "text" : "backgroundSelected"}>
+                     →
+                  </ThemedText>
+               </TouchableOpacity>
             </View>
-         </TouchableOpacity>
-      </Modal>
+            <View style={styles.grid}>
+               {MONTHS.map((label, i) => {
+                  const m = i + 1;
+                  const disabled = pickerYear === maxYear && m > maxMonth;
+                  const selected = pickerYear === year && m === month;
+                  return (
+                     <TouchableOpacity
+                        key={m}
+                        style={[styles.monthCell, selected && { backgroundColor: theme.text }]}
+                        onPress={() => handleMonthPress(m)}
+                        disabled={disabled}
+                     >
+                        <ThemedText
+                           style={[
+                              styles.monthLabel,
+                              disabled && { color: theme.backgroundSelected },
+                              selected && { color: theme.background },
+                           ]}
+                        >
+                           {label}
+                        </ThemedText>
+                     </TouchableOpacity>
+                  );
+               })}
+            </View>
+         </View>
+      </Overlay>
    );
 }
 
 const styles = StyleSheet.create({
-   overlay: {
-      justifyContent: "center",
-      alignItems: "center",
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
-   },
    container: {
       gap: Spacing.three,
       width: 280,

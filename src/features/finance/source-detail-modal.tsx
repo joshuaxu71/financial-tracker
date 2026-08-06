@@ -1,7 +1,7 @@
 import { usePowerSync } from "@powersync/react";
 import { useState } from "react";
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
@@ -87,153 +87,155 @@ export function SourceDetailModal({
 
    return (
       <Modal visible={visible} animationType="slide" onRequestClose={onDismiss}>
-         <SafeAreaView style={styles.flex} edges={["top"]}>
-            <View style={styles.header}>
-               <ThemedText type="subtitle" style={styles.headerTitle} numberOfLines={1}>
-                  {active.name}
-               </ThemedText>
-               <View style={styles.headerActions}>
-                  {sources.length >= 2 && (
+         <SafeAreaProvider>
+            <SafeAreaView style={styles.flex} edges={["top"]}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle" style={styles.headerTitle} numberOfLines={1}>
+                     {active.name}
+                  </ThemedText>
+                  <View style={styles.headerActions}>
+                     {sources.length >= 2 && (
+                        <TouchableOpacity
+                           onPress={() => {
+                              setEditingTransfer(null);
+                              setShowTransfer(true);
+                           }}
+                           style={[styles.addButton, { backgroundColor: theme.text }]}
+                        >
+                           <ThemedText type="smallBold" style={{ color: theme.background }}>
+                              → Transfer
+                           </ThemedText>
+                        </TouchableOpacity>
+                     )}
                      <TouchableOpacity
-                        onPress={() => {
-                           setEditingTransfer(null);
-                           setShowTransfer(true);
-                        }}
+                        onPress={() => setShowIncome(true)}
                         style={[styles.addButton, { backgroundColor: theme.text }]}
                      >
                         <ThemedText type="smallBold" style={{ color: theme.background }}>
-                           → Transfer
+                           + Add money
                         </ThemedText>
                      </TouchableOpacity>
-                  )}
-                  <TouchableOpacity
-                     onPress={() => setShowIncome(true)}
-                     style={[styles.addButton, { backgroundColor: theme.text }]}
-                  >
-                     <ThemedText type="smallBold" style={{ color: theme.background }}>
-                        + Add money
-                     </ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
-                     <ThemedText themeColor="textSecondary">Done</ThemedText>
-                  </TouchableOpacity>
+                     <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+                        <ThemedText themeColor="textSecondary">Done</ThemedText>
+                     </TouchableOpacity>
+                  </View>
                </View>
-            </View>
 
-            <ThemedView type="backgroundElement" style={styles.balanceCard}>
-               <ThemedText type="small" themeColor="textSecondary">
-                  {active.currency}
-               </ThemedText>
-               <ThemedText type="title">
-                  {formatCurrencyAmount(balance, active.currency)}
-               </ThemedText>
-               {active.currency !== "JPY" && (
+               <ThemedView type="backgroundElement" style={styles.balanceCard}>
                   <ThemedText type="small" themeColor="textSecondary">
-                     ≈ {formatAmount(jpy)} JPY
+                     {active.currency}
                   </ThemedText>
-               )}
-            </ThemedView>
-
-            <ScrollView contentContainerStyle={styles.listContent}>
-               {income.length === 0 && transfers.length === 0 ? (
-                  <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
-                     No activity yet.
+                  <ThemedText type="title">
+                     {formatCurrencyAmount(balance, active.currency)}
                   </ThemedText>
-               ) : (
-                  <>
-                     {income.map((entry) => (
-                        <TouchableOpacity
-                           key={entry.id}
-                           style={styles.row}
-                           onLongPress={() => confirmDeleteIncome(entry)}
-                        >
-                           <ThemedText type="small" themeColor="textSecondary">
-                              {formatDisplayDate(entry.date)}
-                           </ThemedText>
-                           <ThemedText type="small" style={styles.amount}>
-                              + {formatCurrencyAmount(entry.amount, active.currency)}
-                           </ThemedText>
-                        </TouchableOpacity>
-                     ))}
-                     {transfers.map((t) => {
-                        const isOut = t.from_source_id === active.id;
-                        const counterpart = sources.find(
-                           (x) => x.id === (isOut ? t.to_source_id : t.from_source_id),
-                        );
-                        const amount = isOut ? t.from_amount : t.to_amount;
-                        function openTransferActions(t: TransferRow) {
-                           Alert.alert("Transfer", undefined, [
-                              { text: "Cancel", style: "cancel" },
-                              {
-                                 text: "Edit",
-                                 onPress: () => {
-                                    setEditingTransfer(t);
-                                    setShowTransfer(true);
-                                 },
-                              },
-                              {
-                                 text: "Delete",
-                                 style: "destructive",
-                                 onPress: () => confirmDeleteTransfer(t),
-                              },
-                           ]);
-                        }
+                  {active.currency !== "JPY" && (
+                     <ThemedText type="small" themeColor="textSecondary">
+                        ≈ {formatAmount(jpy)} JPY
+                     </ThemedText>
+                  )}
+               </ThemedView>
 
-                        return (
+               <ScrollView contentContainerStyle={styles.listContent}>
+                  {income.length === 0 && transfers.length === 0 ? (
+                     <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
+                        No activity yet.
+                     </ThemedText>
+                  ) : (
+                     <>
+                        {income.map((entry) => (
                            <TouchableOpacity
-                              key={t.id}
+                              key={entry.id}
                               style={styles.row}
-                              onLongPress={() => openTransferActions(t)}
+                              onLongPress={() => confirmDeleteIncome(entry)}
                            >
-                              <View style={styles.transferLeft}>
-                                 <ThemedText type="small" themeColor="textSecondary">
-                                    {formatDisplayDate(t.date)}
-                                 </ThemedText>
-                                 <ThemedText type="small" themeColor="textSecondary">
-                                    {isOut
-                                       ? `→ ${counterpart?.name ?? "?"}`
-                                       : `← ${counterpart?.name ?? "?"}`}
-                                 </ThemedText>
-                              </View>
-                              <ThemedText
-                                 type="small"
-                                 style={[
-                                    styles.amount,
-                                    { color: isOut ? theme.textSecondary : undefined },
-                                 ]}
-                              >
-                                 {isOut ? "- " : "+ "}
-                                 {formatCurrencyAmount(amount, active.currency)}
+                              <ThemedText type="small" themeColor="textSecondary">
+                                 {formatDisplayDate(entry.date)}
+                              </ThemedText>
+                              <ThemedText type="small" style={styles.amount}>
+                                 + {formatCurrencyAmount(entry.amount, active.currency)}
                               </ThemedText>
                            </TouchableOpacity>
-                        );
-                     })}
-                  </>
-               )}
-            </ScrollView>
-         </SafeAreaView>
+                        ))}
+                        {transfers.map((t) => {
+                           const isOut = t.from_source_id === active.id;
+                           const counterpart = sources.find(
+                              (x) => x.id === (isOut ? t.to_source_id : t.from_source_id),
+                           );
+                           const amount = isOut ? t.from_amount : t.to_amount;
+                           function openTransferActions(t: TransferRow) {
+                              Alert.alert("Transfer", undefined, [
+                                 { text: "Cancel", style: "cancel" },
+                                 {
+                                    text: "Edit",
+                                    onPress: () => {
+                                       setEditingTransfer(t);
+                                       setShowTransfer(true);
+                                    },
+                                 },
+                                 {
+                                    text: "Delete",
+                                    style: "destructive",
+                                    onPress: () => confirmDeleteTransfer(t),
+                                 },
+                              ]);
+                           }
 
-         <IncomeModal
-            visible={showIncome}
-            source={active}
-            onDismiss={() => setShowIncome(false)}
-            onChanged={onChanged}
-         />
-         <TransferModal
-            visible={showTransfer}
-            fromSource={
-               editingTransfer
-                  ? (sources.find((s) => s.id === editingTransfer.from_source_id) ?? active)
-                  : active
-            }
-            sources={sources}
-            transfer={editingTransfer}
-            onDismiss={() => {
-               setShowTransfer(false);
-               setEditingTransfer(null);
-            }}
-            onChanged={onChanged}
-         />
+                           return (
+                              <TouchableOpacity
+                                 key={t.id}
+                                 style={styles.row}
+                                 onLongPress={() => openTransferActions(t)}
+                              >
+                                 <View style={styles.transferLeft}>
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                       {formatDisplayDate(t.date)}
+                                    </ThemedText>
+                                    <ThemedText type="small" themeColor="textSecondary">
+                                       {isOut
+                                          ? `→ ${counterpart?.name ?? "?"}`
+                                          : `← ${counterpart?.name ?? "?"}`}
+                                    </ThemedText>
+                                 </View>
+                                 <ThemedText
+                                    type="small"
+                                    style={[
+                                       styles.amount,
+                                       { color: isOut ? theme.textSecondary : undefined },
+                                    ]}
+                                 >
+                                    {isOut ? "- " : "+ "}
+                                    {formatCurrencyAmount(amount, active.currency)}
+                                 </ThemedText>
+                              </TouchableOpacity>
+                           );
+                        })}
+                     </>
+                  )}
+               </ScrollView>
+            </SafeAreaView>
+
+            <IncomeModal
+               visible={showIncome}
+               source={active}
+               onDismiss={() => setShowIncome(false)}
+               onChanged={onChanged}
+            />
+            <TransferModal
+               visible={showTransfer}
+               fromSource={
+                  editingTransfer
+                     ? (sources.find((s) => s.id === editingTransfer.from_source_id) ?? active)
+                     : active
+               }
+               sources={sources}
+               transfer={editingTransfer}
+               onDismiss={() => {
+                  setShowTransfer(false);
+                  setEditingTransfer(null);
+               }}
+               onChanged={onChanged}
+            />
+         </SafeAreaProvider>
       </Modal>
    );
 }

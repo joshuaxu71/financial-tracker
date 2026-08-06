@@ -1,7 +1,8 @@
 import { usePowerSync } from "@powersync/react";
 import { useEffect, useState } from "react";
-import { Alert, Modal, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
+import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow } from "@/db/sources";
@@ -105,121 +106,110 @@ export function TransferModal({
    }
 
    return (
-      <Modal transparent animationType="fade" visible={visible} onRequestClose={close}>
-         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={close}>
-            <View
-               style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}
-               onStartShouldSetResponder={() => true}
-            >
-               <ThemedText type="smallBold" style={styles.title}>
-                  {transfer ? `Edit transfer · ${active.name}` : `Transfer · ${active.name}`}
-               </ThemedText>
+      <Overlay visible={visible} onRequestClose={close}>
+         <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold" style={styles.title}>
+               {transfer ? `Edit transfer · ${active.name}` : `Transfer · ${active.name}`}
+            </ThemedText>
 
-               <ThemedText themeColor="textSecondary" style={styles.label}>
-                  To
-               </ThemedText>
-               <View style={styles.chipRow}>
-                  {toSources.map((s) => {
-                     const selected = effectiveToId === s.id;
-                     return (
-                        <TouchableOpacity
-                           key={s.id}
-                           style={[
-                              styles.chip,
-                              {
-                                 backgroundColor: selected ? theme.text : theme.backgroundSelected,
-                              },
-                           ]}
-                           onPress={() => setToSourceId(s.id)}
-                        >
-                           <ThemedText
-                              type="small"
-                              style={{ color: selected ? theme.background : theme.text }}
-                           >
-                              {s.name}
-                           </ThemedText>
-                        </TouchableOpacity>
-                     );
-                  })}
-               </View>
-
-               <ThemedText themeColor="textSecondary" style={styles.label}>
-                  Amount ({active.currency})
-               </ThemedText>
-               <TextInput
-                  value={fromAmount}
-                  onChangeText={setFromAmount}
-                  placeholder="e.g. 10000"
-                  placeholderTextColor={theme.textSecondary}
-                  keyboardType="decimal-pad"
-                  style={[
-                     styles.input,
-                     { color: theme.text, backgroundColor: theme.backgroundSelected },
-                  ]}
-                  autoFocus
-               />
-
-               {!sameCurrency && toSource != null && (
-                  <>
-                     <ThemedText themeColor="textSecondary" style={styles.label}>
-                        Received ({toSource.currency})
-                     </ThemedText>
-                     <TextInput
-                        value={toAmount}
-                        onChangeText={setToAmount}
-                        placeholder="e.g. 65"
-                        placeholderTextColor={theme.textSecondary}
-                        keyboardType="decimal-pad"
+            <ThemedText themeColor="textSecondary" style={styles.label}>
+               To
+            </ThemedText>
+            <View style={styles.chipRow}>
+               {toSources.map((s) => {
+                  const selected = effectiveToId === s.id;
+                  return (
+                     <TouchableOpacity
+                        key={s.id}
                         style={[
-                           styles.input,
-                           { color: theme.text, backgroundColor: theme.backgroundSelected },
+                           styles.chip,
+                           {
+                              backgroundColor: selected ? theme.text : theme.backgroundSelected,
+                           },
                         ]}
-                     />
-                  </>
-               )}
-
-               <ThemedText themeColor="textSecondary" style={styles.label}>
-                  Date
-               </ThemedText>
-               <TextInput
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={theme.textSecondary}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={[
-                     styles.input,
-                     { color: theme.text, backgroundColor: theme.backgroundSelected },
-                  ]}
-               />
-
-               <View style={styles.actions}>
-                  <TouchableOpacity onPress={close} style={styles.cancelButton}>
-                     <ThemedText themeColor="textSecondary">Cancel</ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                     onPress={save}
-                     style={[styles.saveButton, { backgroundColor: theme.text }]}
-                  >
-                     <ThemedText type="smallBold" style={{ color: theme.background }}>
-                        Transfer
-                     </ThemedText>
-                  </TouchableOpacity>
-               </View>
+                        onPress={() => setToSourceId(s.id)}
+                     >
+                        <ThemedText
+                           type="small"
+                           style={{ color: selected ? theme.background : theme.text }}
+                        >
+                           {s.name}
+                        </ThemedText>
+                     </TouchableOpacity>
+                  );
+               })}
             </View>
-         </TouchableOpacity>
-      </Modal>
+
+            <ThemedText themeColor="textSecondary" style={styles.label}>
+               Amount ({active.currency})
+            </ThemedText>
+            <TextInput
+               value={fromAmount}
+               onChangeText={setFromAmount}
+               placeholder="e.g. 10000"
+               placeholderTextColor={theme.textSecondary}
+               keyboardType="decimal-pad"
+               style={[
+                  styles.input,
+                  { color: theme.text, backgroundColor: theme.backgroundSelected },
+               ]}
+               autoFocus
+            />
+
+            {!sameCurrency && toSource != null && (
+               <>
+                  <ThemedText themeColor="textSecondary" style={styles.label}>
+                     Received ({toSource.currency})
+                  </ThemedText>
+                  <TextInput
+                     value={toAmount}
+                     onChangeText={setToAmount}
+                     placeholder="e.g. 65"
+                     placeholderTextColor={theme.textSecondary}
+                     keyboardType="decimal-pad"
+                     style={[
+                        styles.input,
+                        { color: theme.text, backgroundColor: theme.backgroundSelected },
+                     ]}
+                  />
+               </>
+            )}
+
+            <ThemedText themeColor="textSecondary" style={styles.label}>
+               Date
+            </ThemedText>
+            <TextInput
+               value={date}
+               onChangeText={setDate}
+               placeholder="YYYY-MM-DD"
+               placeholderTextColor={theme.textSecondary}
+               autoCapitalize="none"
+               autoCorrect={false}
+               style={[
+                  styles.input,
+                  { color: theme.text, backgroundColor: theme.backgroundSelected },
+               ]}
+            />
+
+            <View style={styles.actions}>
+               <TouchableOpacity onPress={close} style={styles.cancelButton}>
+                  <ThemedText themeColor="textSecondary">Cancel</ThemedText>
+               </TouchableOpacity>
+               <TouchableOpacity
+                  onPress={save}
+                  style={[styles.saveButton, { backgroundColor: theme.text }]}
+               >
+                  <ThemedText type="smallBold" style={{ color: theme.background }}>
+                     Transfer
+                  </ThemedText>
+               </TouchableOpacity>
+            </View>
+         </View>
+      </Overlay>
    );
 }
 
 const styles = StyleSheet.create({
-   overlay: {
-      justifyContent: "center",
-      alignItems: "center",
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
-   },
    sheet: {
       gap: Spacing.two,
       width: 320,

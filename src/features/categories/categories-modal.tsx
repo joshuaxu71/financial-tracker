@@ -10,8 +10,9 @@ import {
    TouchableOpacity,
    View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
+import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { resolveCategoryColor } from "@/constants/categories";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
@@ -365,45 +366,38 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
    return (
       <Modal visible={visible} animationType="slide" onRequestClose={onDismiss} onShow={load}>
-         <SafeAreaView style={styles.flex} edges={["top"]}>
-            <View style={styles.header}>
-               <ThemedText type="subtitle" style={styles.headerTitle}>
-                  Categories
-               </ThemedText>
-               <View style={styles.headerActions}>
-                  <TouchableOpacity
-                     onPress={openNew}
-                     style={[styles.addButton, { backgroundColor: theme.text }]}
-                  >
-                     <ThemedText type="smallBold" style={{ color: theme.background }}>
-                        + New
-                     </ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
-                     <ThemedText themeColor="textSecondary">Done</ThemedText>
-                  </TouchableOpacity>
+         <SafeAreaProvider>
+            <SafeAreaView style={styles.flex} edges={["top"]}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle" style={styles.headerTitle}>
+                     Categories
+                  </ThemedText>
+                  <View style={styles.headerActions}>
+                     <TouchableOpacity
+                        onPress={openNew}
+                        style={[styles.addButton, { backgroundColor: theme.text }]}
+                     >
+                        <ThemedText type="smallBold" style={{ color: theme.background }}>
+                           + New
+                        </ThemedText>
+                     </TouchableOpacity>
+                     <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+                        <ThemedText themeColor="textSecondary">Done</ThemedText>
+                     </TouchableOpacity>
+                  </View>
                </View>
-            </View>
 
-            <FlatList
-               data={tree}
-               keyExtractor={(n) => String(n.category.id)}
-               renderItem={({ item }) => renderNode(item)}
-               contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}
-            />
-         </SafeAreaView>
+               <FlatList
+                  data={tree}
+                  keyExtractor={(n) => String(n.category.id)}
+                  renderItem={({ item }) => renderNode(item)}
+                  contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}
+               />
+            </SafeAreaView>
 
-         {editor && (
-            <Modal transparent animationType="fade" onRequestClose={() => setEditor(null)}>
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setEditor(null)}
-               >
-                  <View
-                     style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
+            {editor && (
+               <Overlay visible onRequestClose={() => setEditor(null)}>
+                  <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
                         {editor.mode === "new" ? "New category" : `Edit ${editor.name}`}
                      </ThemedText>
@@ -519,25 +513,12 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         </TouchableOpacity>
                      </View>
                   </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
+               </Overlay>
+            )}
 
-         {showParentPicker && editor && (
-            <Modal
-               transparent
-               animationType="fade"
-               onRequestClose={() => setShowParentPicker(false)}
-            >
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setShowParentPicker(false)}
-               >
-                  <View
-                     style={[styles.picker, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
+            {showParentPicker && editor && (
+               <Overlay visible onRequestClose={() => setShowParentPicker(false)}>
+                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
                         Parent
                      </ThemedText>
@@ -586,21 +567,12 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                            );
                         })}
                   </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
+               </Overlay>
+            )}
 
-         {showReassign && editor && (
-            <Modal transparent animationType="fade" onRequestClose={() => setShowReassign(false)}>
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setShowReassign(false)}
-               >
-                  <View
-                     style={[styles.picker, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
+            {showReassign && editor && (
+               <Overlay visible onRequestClose={() => setShowReassign(false)}>
+                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
@@ -627,9 +599,9 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                      </TouchableOpacity>
                   </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
+               </Overlay>
+            )}
+         </SafeAreaProvider>
       </Modal>
    );
 }
@@ -688,12 +660,6 @@ const styles = StyleSheet.create({
    rowName: { flex: 1, fontSize: 15 },
    count: { fontSize: 12 },
    editHint: { fontSize: 12 },
-   overlay: {
-      justifyContent: "center",
-      alignItems: "center",
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
-   },
    sheet: {
       gap: Spacing.two,
       width: 320,

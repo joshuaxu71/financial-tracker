@@ -10,8 +10,9 @@ import {
    TouchableOpacity,
    View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
+import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { CURRENCIES, currencyName } from "@/constants/currencies";
@@ -154,72 +155,67 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
 
    return (
       <Modal visible={visible} animationType="slide" onRequestClose={onDismiss} onShow={load}>
-         <SafeAreaView style={styles.flex} edges={["top"]}>
-            <View style={styles.header}>
-               <ThemedText type="subtitle" style={styles.headerTitle}>
-                  Sources
-               </ThemedText>
-               <View style={styles.headerActions}>
-                  <TouchableOpacity
-                     onPress={openNew}
-                     style={[styles.addButton, { backgroundColor: theme.text }]}
-                  >
-                     <ThemedText type="smallBold" style={{ color: theme.background }}>
-                        + New
-                     </ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
-                     <ThemedText themeColor="textSecondary">Done</ThemedText>
-                  </TouchableOpacity>
-               </View>
-            </View>
-
-            <FlatList
-               data={sources}
-               keyExtractor={(s) => String(s.id)}
-               renderItem={({ item }) => {
-                  const count = usage.get(item.id) ?? 0;
-                  return (
+         <SafeAreaProvider>
+            <SafeAreaView style={styles.flex} edges={["top"]}>
+               <View style={styles.header}>
+                  <ThemedText type="subtitle" style={styles.headerTitle}>
+                     Sources
+                  </ThemedText>
+                  <View style={styles.headerActions}>
                      <TouchableOpacity
-                        style={styles.row}
-                        activeOpacity={0.7}
-                        onPress={() => openEdit(item)}
+                        onPress={openNew}
+                        style={[styles.addButton, { backgroundColor: theme.text }]}
                      >
-                        <View style={[styles.dot, { backgroundColor: item.color ?? "#888888" }]} />
-                        <View style={styles.rowMain}>
-                           <ThemedText style={styles.rowName} numberOfLines={1}>
-                              {item.name}
-                           </ThemedText>
-                           <ThemedText themeColor="textSecondary" type="small">
-                              {currencyName(item.currency)}
-                           </ThemedText>
-                        </View>
-                        {count > 0 && (
-                           <ThemedText themeColor="textSecondary" type="small">
-                              {count}
-                           </ThemedText>
-                        )}
-                        <ThemedText themeColor="textSecondary" type="small">
-                           edit
+                        <ThemedText type="smallBold" style={{ color: theme.background }}>
+                           + New
                         </ThemedText>
                      </TouchableOpacity>
-                  );
-               }}
-               contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}
-            />
-         </SafeAreaView>
+                     <TouchableOpacity onPress={onDismiss} style={styles.closeButton}>
+                        <ThemedText themeColor="textSecondary">Done</ThemedText>
+                     </TouchableOpacity>
+                  </View>
+               </View>
 
-         {editor && (
-            <Modal transparent animationType="fade" onRequestClose={() => setEditor(null)}>
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setEditor(null)}
-               >
-                  <View
-                     style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
+               <FlatList
+                  data={sources}
+                  keyExtractor={(s) => String(s.id)}
+                  renderItem={({ item }) => {
+                     const count = usage.get(item.id) ?? 0;
+                     return (
+                        <TouchableOpacity
+                           style={styles.row}
+                           activeOpacity={0.7}
+                           onPress={() => openEdit(item)}
+                        >
+                           <View
+                              style={[styles.dot, { backgroundColor: item.color ?? "#888888" }]}
+                           />
+                           <View style={styles.rowMain}>
+                              <ThemedText style={styles.rowName} numberOfLines={1}>
+                                 {item.name}
+                              </ThemedText>
+                              <ThemedText themeColor="textSecondary" type="small">
+                                 {currencyName(item.currency)}
+                              </ThemedText>
+                           </View>
+                           {count > 0 && (
+                              <ThemedText themeColor="textSecondary" type="small">
+                                 {count}
+                              </ThemedText>
+                           )}
+                           <ThemedText themeColor="textSecondary" type="small">
+                              edit
+                           </ThemedText>
+                        </TouchableOpacity>
+                     );
+                  }}
+                  contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}
+               />
+            </SafeAreaView>
+
+            {editor && (
+               <Overlay visible onRequestClose={() => setEditor(null)}>
+                  <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
                         {editor.mode === "new" ? "New source" : `Edit ${editor.name}`}
                      </ThemedText>
@@ -244,41 +240,13 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                      </ThemedText>
                      <TouchableOpacity
                         style={[styles.parentRow, { backgroundColor: theme.backgroundSelected }]}
-                        onPress={() => setShowCurrencyPicker((v) => !v)}
+                        onPress={() => setShowCurrencyPicker(true)}
                      >
                         <ThemedText>
                            {editor.currency} · {currencyName(editor.currency)}
                         </ThemedText>
-                        <ThemedText themeColor="textSecondary">
-                           {showCurrencyPicker ? "▴" : "▾"}
-                        </ThemedText>
+                        <ThemedText themeColor="textSecondary">▾</ThemedText>
                      </TouchableOpacity>
-                     {showCurrencyPicker && (
-                        <ScrollView style={styles.currencyList} nestedScrollEnabled>
-                           {CURRENCIES.map((c) => (
-                              <TouchableOpacity
-                                 key={c.code}
-                                 style={styles.pickerRow}
-                                 onPress={() => {
-                                    setEditor({ ...editor, currency: c.code });
-                                    setShowCurrencyPicker(false);
-                                 }}
-                              >
-                                 <ThemedText
-                                    style={[
-                                       styles.pickerLabel,
-                                       editor.currency === c.code && styles.selectedText,
-                                    ]}
-                                 >
-                                    {c.code} · {c.name}
-                                 </ThemedText>
-                                 {editor.currency === c.code && (
-                                    <ThemedText themeColor="textSecondary">✓</ThemedText>
-                                 )}
-                              </TouchableOpacity>
-                           ))}
-                        </ScrollView>
-                     )}
 
                      <ThemedText themeColor="textSecondary" style={styles.label}>
                         Opening balance
@@ -330,21 +298,46 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         </TouchableOpacity>
                      </View>
                   </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
+               </Overlay>
+            )}
 
-         {showReassign && editor && (
-            <Modal transparent animationType="fade" onRequestClose={() => setShowReassign(false)}>
-               <TouchableOpacity
-                  style={styles.overlay}
-                  activeOpacity={1}
-                  onPress={() => setShowReassign(false)}
-               >
-                  <View
-                     style={[styles.picker, { backgroundColor: theme.backgroundElement }]}
-                     onStartShouldSetResponder={() => true}
-                  >
+            {showCurrencyPicker && editor && (
+               <Overlay visible onRequestClose={() => setShowCurrencyPicker(false)}>
+                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
+                     <ThemedText type="smallBold" style={styles.sheetTitle}>
+                        Currency
+                     </ThemedText>
+                     <ScrollView style={styles.currencyList} nestedScrollEnabled>
+                        {CURRENCIES.map((c) => (
+                           <TouchableOpacity
+                              key={c.code}
+                              style={styles.pickerRow}
+                              onPress={() => {
+                                 setEditor({ ...editor, currency: c.code });
+                                 setShowCurrencyPicker(false);
+                              }}
+                           >
+                              <ThemedText
+                                 style={[
+                                    styles.pickerLabel,
+                                    editor.currency === c.code && styles.selectedText,
+                                 ]}
+                              >
+                                 {c.code} · {c.name}
+                              </ThemedText>
+                              {editor.currency === c.code && (
+                                 <ThemedText themeColor="textSecondary">✓</ThemedText>
+                              )}
+                           </TouchableOpacity>
+                        ))}
+                     </ScrollView>
+                  </View>
+               </Overlay>
+            )}
+
+            {showReassign && editor && (
+               <Overlay visible onRequestClose={() => setShowReassign(false)}>
+                  <View style={[styles.picker, { backgroundColor: theme.backgroundElement }]}>
                      <ThemedText type="smallBold" style={styles.sheetTitle}>
                         Move {usage.get(editor.id ?? "") ?? 0} expenses to…
                      </ThemedText>
@@ -371,9 +364,9 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         <ThemedText themeColor="textSecondary">Cancel</ThemedText>
                      </TouchableOpacity>
                   </View>
-               </TouchableOpacity>
-            </Modal>
-         )}
+               </Overlay>
+            )}
+         </SafeAreaProvider>
       </Modal>
    );
 }
@@ -413,12 +406,6 @@ const styles = StyleSheet.create({
       width: 10,
       height: 10,
       borderRadius: 5,
-   },
-   overlay: {
-      justifyContent: "center",
-      alignItems: "center",
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
    },
    sheet: {
       gap: Spacing.two,

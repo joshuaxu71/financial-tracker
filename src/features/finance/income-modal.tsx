@@ -1,7 +1,8 @@
 import { usePowerSync } from "@powersync/react";
 import { useState } from "react";
-import { Alert, Modal, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 
+import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { Spacing } from "@/constants/theme";
 import { type SourceRow, insertIncome } from "@/db/sources";
@@ -50,74 +51,63 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
    }
 
    return (
-      <Modal transparent animationType="fade" visible={visible} onRequestClose={close}>
-         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={close}>
-            <View
-               style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}
-               onStartShouldSetResponder={() => true}
-            >
-               <ThemedText type="smallBold" style={styles.title}>
-                  Add money · {source.name}
-               </ThemedText>
+      <Overlay visible={visible} onRequestClose={close}>
+         <View style={[styles.sheet, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold" style={styles.title}>
+               Add money · {source.name}
+            </ThemedText>
 
-               <ThemedText themeColor="textSecondary" style={styles.label}>
-                  Amount ({source.currency})
-               </ThemedText>
-               <TextInput
-                  value={amount}
-                  onChangeText={setAmount}
-                  placeholder="e.g. 100000"
-                  placeholderTextColor={theme.textSecondary}
-                  keyboardType="decimal-pad"
-                  style={[
-                     styles.input,
-                     { color: theme.text, backgroundColor: theme.backgroundSelected },
-                  ]}
-                  autoFocus
-               />
+            <ThemedText themeColor="textSecondary" style={styles.label}>
+               Amount ({source.currency})
+            </ThemedText>
+            <TextInput
+               value={amount}
+               onChangeText={setAmount}
+               placeholder="e.g. 100000"
+               placeholderTextColor={theme.textSecondary}
+               keyboardType="decimal-pad"
+               style={[
+                  styles.input,
+                  { color: theme.text, backgroundColor: theme.backgroundSelected },
+               ]}
+               autoFocus
+            />
 
-               <ThemedText themeColor="textSecondary" style={styles.label}>
-                  Date
-               </ThemedText>
-               <TextInput
-                  value={date}
-                  onChangeText={setDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={theme.textSecondary}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={[
-                     styles.input,
-                     { color: theme.text, backgroundColor: theme.backgroundSelected },
-                  ]}
-               />
+            <ThemedText themeColor="textSecondary" style={styles.label}>
+               Date
+            </ThemedText>
+            <TextInput
+               value={date}
+               onChangeText={setDate}
+               placeholder="YYYY-MM-DD"
+               placeholderTextColor={theme.textSecondary}
+               autoCapitalize="none"
+               autoCorrect={false}
+               style={[
+                  styles.input,
+                  { color: theme.text, backgroundColor: theme.backgroundSelected },
+               ]}
+            />
 
-               <View style={styles.actions}>
-                  <TouchableOpacity onPress={close} style={styles.cancelButton}>
-                     <ThemedText themeColor="textSecondary">Cancel</ThemedText>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                     onPress={save}
-                     style={[styles.saveButton, { backgroundColor: theme.text }]}
-                  >
-                     <ThemedText type="smallBold" style={{ color: theme.background }}>
-                        Add
-                     </ThemedText>
-                  </TouchableOpacity>
-               </View>
+            <View style={styles.actions}>
+               <TouchableOpacity onPress={close} style={styles.cancelButton}>
+                  <ThemedText themeColor="textSecondary">Cancel</ThemedText>
+               </TouchableOpacity>
+               <TouchableOpacity
+                  onPress={save}
+                  style={[styles.saveButton, { backgroundColor: theme.text }]}
+               >
+                  <ThemedText type="smallBold" style={{ color: theme.background }}>
+                     Add
+                  </ThemedText>
+               </TouchableOpacity>
             </View>
-         </TouchableOpacity>
-      </Modal>
+         </View>
+      </Overlay>
    );
 }
 
 const styles = StyleSheet.create({
-   overlay: {
-      justifyContent: "center",
-      alignItems: "center",
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.5)",
-   },
    sheet: {
       gap: Spacing.two,
       width: 320,
