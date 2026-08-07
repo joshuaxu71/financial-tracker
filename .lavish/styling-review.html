@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Styling Review — subcategory budgets + dashboard</title>
+<style>
+  :root, [data-theme="light"] {
+    --text: #000000;
+    --background: #ffffff;
+    --element: #F0F0F3;
+    --selected: #E0E1E6;
+    --text2: #60646C;
+    --danger: #EF4444;
+    --border: rgba(96,100,108,.35);
+  }
+  [data-theme="dark"] {
+    --text: #ffffff;
+    --background: #000000;
+    --element: #212225;
+    --selected: #2E3135;
+    --text2: #B0B4BA;
+    --danger: #FF453A;
+    --border: rgba(176,180,186,.3);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Urbanist", ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.5; color: var(--text); background: var(--background);
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 8px; flex-wrap: wrap; }
+  h1 { font-size: 26px; margin: 0; letter-spacing: -0.02em; }
+  .sub { color: var(--text2); margin-top: 4px; font-size: 14px; }
+  .toggle { display: flex; gap: 4px; padding: 4px; border-radius: 100px; background: var(--element); }
+  .toggle button { border: 0; font-family: inherit; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 100px; cursor: pointer; color: var(--text2); background: transparent; }
+  .toggle button.on { background: var(--text); color: var(--background); }
+
+  .card { border: 1px solid var(--border); border-radius: 20px; padding: 22px; margin-top: 26px; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card .intro { color: var(--text2); font-size: 13px; margin: 0 0 18px; }
+
+  .pair { display: grid; grid-template-columns: 1fr; gap: 18px; }
+  @media (min-width: 760px) { .pair { grid-template-columns: 1fr 1fr; } }
+
+  /* ---- phone mock ---- */
+  .phone {
+    background: var(--background); border: 1px solid var(--border);
+    border-radius: 26px; padding: 14px 12px; max-width: 380px; margin: 0 auto;
+  }
+  .phonehead { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 10px; }
+  .phonehead .t { font-size: 20px; font-weight: 700; }
+  .phheadright { display: flex; align-items: center; gap: 8px; }
+  .phbtn { font-size: 12px; font-weight: 700; border-radius: 100px; padding: 5px 12px; background: var(--text); color: var(--background); }
+  .phbtn.ghost { background: var(--selected); color: var(--text); }
+  .phbtn.icon { padding: 5px 8px; }
+
+  .category { border-bottom: 1px solid var(--border); padding: 8px 6px; }
+  .category:last-child { border-bottom: 0; }
+  .crow { display: flex; align-items: center; gap: 8px; }
+  .theev { width: 4px; border-radius: 2px; background: var(--text2); opacity: .5; flex-shrink: 0; align-self: stretch; }
+  .dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; }
+  .cname { flex: 1; font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .csub { font-size: 11px; color: var(--text2); font-weight: 600; }
+  .chev { font-size: 12px; color: var(--text2); }
+
+  .budget { margin-top: 6px; padding-left: 18px; }
+  .blabel { display: flex; justify-content: space-between; font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .blabel .n { color: var(--text); font-weight: 600; }
+  .track { height: 4px; border-radius: 2px; background: var(--selected); overflow: hidden; }
+  .fill { height: 100%; border-radius: 2px; }
+  .fill.over { background: var(--danger); }
+
+  .frame { text-align: center; font-size: 11px; color: var(--text2); margin: 8px 0 6px; }
+  .caption { font-size: 12px; color: var(--text2); margin-top: 10px; }
+
+  /* dashboard row variants */
+  .drow { display: flex; align-items: center; gap: 8px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .drow:last-child { border-bottom: 0; }
+  .dname { flex: 1; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dspent { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dbudget { display: flex; align-items: center; gap: 8px; padding: 0 4px 8px 18px; }
+  .dbudget .track { flex: 1; height: 6px; }
+  .dlabel { font-size: 11px; color: var(--text2); white-space: nowrap; }
+
+  .summary { background: var(--element); border-radius: 16px; padding: 14px; text-align: center; margin-top: 6px; }
+  .summary .lbl { font-size: 11px; color: var(--text2); }
+  .summary .amt { font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .summary .sub2 { font-size: 11px; color: var(--text2); }
+
+  .monthnav { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 4px 10px; }
+  .mnlabel { font-size: 14px; font-weight: 700; }
+  .mnlabel span { color: var(--text2); }
+
+  .range { display: flex; gap: 6px; margin-bottom: 10px; }
+  .pill { font-size: 12px; font-weight: 700; border-radius: 100px; padding: 5px 12px; background: var(--text); color: var(--background); }
+  .pill.ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .pill.icon { padding: 5px 10px; }
+  .rchip { flex: 1; text-align: center; font-size: 12px; font-weight: 700; padding: 6px 0; border-radius: 100px; background: var(--element); color: var(--text2); }
+  .rchip.on { background: var(--text); color: var(--background); }
+
+  .question { border-top: 1px solid var(--border); padding-top: 18px; margin-top: 20px; }
+  .question h3 { font-size: 15px; margin: 0 0 4px; }
+  .question p { font-size: 13px; color: var(--text2); margin: 2px 0 12px; }
+  .qgrid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  @media (min-width: 640px) { .qgrid { grid-template-columns: 1fr 1fr; } }
+  .opt { display: block; padding: 12px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; background: var(--background); }
+  .opt.sel { border-color: var(--text); box-shadow: 0 0 0 1px var(--text); }
+  .opt .t { font-weight: 700; font-size: 13px; }
+  .opt .d { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .submit { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn { font-family: inherit; font-weight: 700; font-size: 13px; border: 0; border-radius: 100px; padding: 10px 20px; cursor: pointer; background: var(--text); color: var(--background); }
+  .btn.ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .queued { font-size: 12px; font-weight: 600; margin-top: 8px; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <div>
+      <h1>Styling review</h1>
+      <div class="sub">Two areas: (1) category budget bars when a group has sub-categories, (2) the Dashboard page. Tap an option to preview, then queue the ones you want.</div>
+    </div>
+    <div class="toggle">
+      <button id="lt" onclick="setTheme('light')">Light</button>
+      <button id="dt" class="on" onclick="setTheme('dark')">Dark</button>
+    </div>
+  </div>
+
+  <!-- ===================== 1. SUBCATEGORY BUDGET ===================== -->
+  <div class="card">
+    <h2>1 · Categories modal — budgets with sub-categories</h2>
+    <p class="intro">Right now every row that has a budget shows its own full-width bar <i>and</i> text, so a group plus each child each render a bar — nested, heavy, and noisy.</p>
+
+    <div class="pair">
+      <!-- NOW -->
+      <div>
+        <div class="frame">Now — every budgeted row gets its own bar + label</div>
+        <div class="phone">
+          <div class="category">
+            <div class="crow">
+              <div class="dot" style="background:#FF6B6B"></div>
+              <div class="cname">Living</div>
+              <div class="csub">¥52,000 / ¥60,000</div>
+              <div class="chev">▾</div>
+            </div>
+            <div class="budget">
+              <div class="track"><div class="fill" style="width:72%;background:#FF6B6B"></div></div>
+              <div class="blabel"><span>¥52,000 / ¥60,000</span></div>
+            </div>
+            <!-- child 1 -->
+            <div class="category" style="padding-left:18px;margin-top:8px">
+              <div class="crow">
+                <div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+                <div class="cname">House</div>
+              </div>
+              <div class="budget">
+                <div class="blabel"><span>¥24,000 / ¥30,000</span></div>
+                <div class="track"><div class="fill" style="width:80%;background:#FF6B6B"></div></div>
+              </div>
+            </div>
+            <!-- child 2 -->
+            <div class="category" style="padding-left:18px;margin-left:8px">
+              <div class="crow">
+                <div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+                <div class="cname">Food</div>
+              </div>
+              <div class="budget" style="margin-top:4px">
+                <div class="blabel"><span>¥21,000 / ¥20,000</span></div>
+                <div class="track"><div class="fill over" style="width:100%"></div></div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">Twice the bars, indentation drift, and an over-budget child only turns that tiny 11&nbsp;pt label red.</p>
+        </div>
+      </div>
+
+      <!-- Option A -->
+      <div>
+        <div class="frame">Option A — collapsed parent has bar; expanded shows child bars</div>
+        <div class="phone">
+          <div class="caption" style="margin:0 0 6px">Collapsed</div>
+          <div class="category">
+            <div class="crow">
+              <div class="dot" style="background:#FF6B6B"></div>
+              <div class="cname">Living</div>
+              <div class="csub">¥45,000 / ¥50,000</div>
+              <div class="chev">▸</div>
+            </div>
+            <div class="budget"><div class="track"><div class="fill" style="width:90%;background:#FF6B6B"></div></div></div>
+          </div>
+          <div class="caption" style="margin:12px 0 6px">Expanded — parent bar hidden, children each show theirs</div>
+          <div class="category">
+            <div class="crow">
+              <div class="dot" style="background:#FF6B6B"></div>
+              <div class="cname">Living</div>
+              <div class="csub">¥45,000 / ¥50,000</div>
+              <div class="chev">▾</div>
+            </div>
+            <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:4px">
+              <div class="category">
+                <div class="crow">
+                  <div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+                  <div class="cname">House</div>
+                  <div class="dspent" style="font-size:13px">¥24k</div>
+                </div>
+                <div class="budget"><div class="track"><div class="fill" style="width:70%;background:#FF6B6B"></div></div></div>
+              </div>
+              <div class="category">
+                <div class="crow">
+                  <div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+                  <div class="cname">Food</div>
+                  <div class="dspent" style="font-size:13px;color:var(--danger);font-weight:700">¥21k</div>
+                </div>
+                <div class="budget"><div class="track"><div class="fill over" style="width:100%"></div></div></div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">Hierarchy comes from the chevron + a divider line under the group — no indentation needed. Children sit flat, the divider does the grouping.</p>
+        </div>
+      </div>
+    </div>
+
+    <form class="question" id="q-catseed"
+      onsubmit="event.preventDefault(); const v=current('cat'); if(v) window.lavish.queuePrompt('Rework subcategory budget bars in the categories modal: layout ' + v + '.', {tag:'choice', text:'Category budget: '+v, data:{q:'cat', answer:v}}); showQueued('cat');">
+      <h3>Which budget layout for the categories modal?</h3>
+      <p>Pick the direction you want rendered in code.</p>
+      <div class="qgrid" data-opt="cat">
+        <label class="opt" data-v="A"><div><span class="t">A · One bar at a time (recommended)</span><div class="d">Collapsed: parent aggregate bar. Expanded: parent bar hidden, children show theirs. Only one bar visible per level.</div></div></label>
+        <label class="opt" data-v="parent+children"><div><span class="t">B · Parent bar always + children bars</span><div class="d">Parent keeps its bar even when expanded, so a group + children all show bars stacked.</div></div></label>
+        <label class="opt" data-v="childsonly"><div><span class="t">C · Bars only on sub-categories</span><div class="d">No parent bar at all, ever; children carry all the progress.</div></div></label>
+        <label class="opt" data-v="now"><div><span class="t">Keep current</span><div class="d">Full label + bar under every budgeted row, including groups.</div></div></label>
+      </div>
+      <div class="submit"><button type="submit" class="btn">Queue category layout</button><button type="button" class="btn ghost" onclick="clearQ('cat')">Reset</button></div>
+      <div class="queued" id="queued-cat"></div>
+      <div class="question" style="margin-top:16px">
+        <h3>Indentation for sub-categories?</h3>
+        <p>Do we even need it? With the chevron + a divider under the group, hierarchy is already clear — children can sit flat. Options:</p>
+        <div class="qgrid" data-opt="indent">
+          <label class="opt" data-v="flat"><div><span class="t">A · No indent — divider does the grouping (recommended)</span><div class="d">Children sit flat under a divider. Cheapest, cleanest, no staircase.</div></div></label>
+          <label class="opt" data-v="connector"><div><span class="t">B · Slender tree guide-line</span><div class="d">Thin vertical guide connects parent to children; dots align to it. Still tree-like, less staircase.</div></div></label>
+          <label class="opt" data-v="minimal"><div><span class="t">C · Minimal indent</span><div class="d">Children shift one small step (dot column only), combined with the divider.</div></div></label>
+          <label class="opt" data-v="nested"><div><span class="t">D · Keep current depth indent</span><div class="d">Each level indents by Spacing.three as today.</div></div></label>
+        </div>
+        <div class="submit" style="margin-top:10px"><button type="button" class="btn ghost" onclick="indentChoice()">Queue indentation choice</button></div>
+        <div class="queued" id="queued-indent"></div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===================== 2. DASHBOARD ===================== -->
+  <div class="card">
+    <h2>2 · Dashboard page</h2>
+    <p class="intro">The spend total repeats (in the list and under each budget bar), the budget track is double-indented, and the list feels dense. Options below.</p>
+
+    <div class="pair">
+      <!-- Now -->
+      <div>
+        <div class="frame">Now — Dashboard (history.tsx)</div>
+        <div class="phone">
+          <div class="monthnav">
+            <div class="pill icon">‹</div>
+            <div class="mnlabel">August 2026 <span>▾</span></div>
+            <div class="pill ghost">Today</div>
+          </div>
+          <div class="range">
+            <div class="rchip on">1m</div><div class="rchip">3m</div><div class="rchip">6m</div><div class="rchip">12m</div>
+          </div>
+          <div class="range" style="gap:6px">
+            <div class="pill ghost" style="flex:none;padding:4px 12px">All</div>
+            <div class="pill ghost" style="flex:none;padding:4px 12px">Living</div>
+            <div class="pill ghost" style="flex:none;padding:4px 12px">Personal</div>
+          </div>
+          <div class="summary" style="margin-top:10px">
+            <div class="lbl">August total</div>
+            <div class="amt">¥86,400</div>
+            <div class="cap2">total spent</div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="drow">
+              <div class="chev">▾</div><div class="dot" style="background:#FF6B6B"></div>
+              <div class="dname">Living</div><div class="dspent">¥52,000</div>
+            </div>
+            <div class="dbudget">
+              <div class="track"><div class="fill" style="width:87%;background:#FF6B6B"></div></div>
+              <div class="dlabel">52,000 / 60,000</div>
+            </div>
+            <div class="drow" style="padding-left:18px">
+              <div class="chev">▸</div><div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+              <div class="dname">House</div><div class="dspent">¥24,000</div>
+            </div>
+            <div class="drow" style="padding-left:18px">
+              <div class="chev">▸</div><div class="dot" style="background:#FF6B6B;width:8px;height:8px"></div>
+              <div class="dname">Food</div><div class="dspent">¥21,000</div>
+            </div>
+          </div>
+          <p class="caption">Track + text on separate lines, bulky range chips, and the budget line is indented twice — the track sits off from the dot column.</p>
+        </div>
+      </div>
+
+      <!-- Proposal -->
+      <div>
+        <div class="frame">Proposal — card per group (matches categories page)</div>
+        <div class="phone">
+          <div class="monthnav">
+            <div class="pill icon">‹</div>
+            <div class="mnlabel">August 2026 <span>▾</span></div>
+            <div class="pill ghost">Today</div>
+          </div>
+          <div class="range">
+            <div class="rchip on">1m</div><div class="rchip">3m</div><div class="rchip">6m</div><div class="rchip">12m</div>
+          </div>
+          <div class="summary" style="margin-top:6px">
+            <div class="lbl">August total</div>
+            <div class="amt">¥86,400</div>
+            <div class="cap2">total spent</div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="card2" style="background:var(--element);border-radius:14px;overflow:hidden;margin-bottom:10px">
+              <div class="crow" style="padding:10px 12px">
+                <div class="chev">▾</div><div class="dot" style="background:#FF6B6B"></div>
+                <div class="dname">Living</div><div class="dspent">¥52,000</div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding:2px 12px 8px">
+                <div class="crow" style="padding:6px 0;gap:8px">
+                  <div style="width:14px"></div><div class="dot" style="background:#FF6B6B;width:7px;height:7px"></div>
+                  <div class="dname" style="font-size:13px">House</div><div class="dspent" style="font-size:13px">¥24,000</div>
+                </div>
+                <div class="budget" style="margin:2px 0 6px 24px"><div class="track"><div class="fill" style="width:70%;background:#FF6B6B"></div></div></div>
+                <div class="crow" style="padding:6px 0;gap:8px">
+                  <div style="width:14px"></div><div class="dot" style="background:#FF6B6B;width:7px;height:7px"></div>
+                  <div class="dname" style="font-size:13px">Food</div>
+                  <div class="dspent" style="font-size:13px;color:var(--danger);font-weight:700">¥21,000</div>
+                </div>
+                <div class="budget" style="margin:2px 0 6px 24px"><div class="track"><div class="fill over" style="width:100%"></div></div></div>
+              </div>
+            </div>
+            <div class="card2" style="background:var(--element);border-radius:14px;overflow:hidden;margin-bottom:10px">
+              <div class="crow" style="padding:10px 12px">
+                <div class="chev">▸</div><div class="dot" style="background:#4ECDC4"></div>
+                <div class="dname">Personal</div><div class="dspent">¥21,000</div>
+              </div>
+            </div>
+            <div class="card2" style="background:var(--element);border-radius:14px;overflow:hidden">
+              <div class="crow" style="padding:10px 12px">
+                <div class="chev">▸</div><div class="dot" style="background:#45B7D1"></div>
+                <div class="dname">Holiday</div><div class="dspent">¥13,400</div>
+              </div>
+            </div>
+          </div>
+          <p class="caption">Same grouped-card language as the categories page: card header = group (chevron collapse), children nest inside with their own compact budget bars. Consistent across the app.</p>
+        </div>
+      </div>
+    </div>
+
+    <form class="question" id="q-dash"
+      onsubmit="event.preventDefault(); const v=current('dash'); if(v) window.lavish.queuePrompt('Dashboard layout: ' + v + '.', {label:'choice', text:'Dashboard: '+v, data:{q:'dash', answer:v}}); showQueued('dash');">
+      <h3>Dashboard direction</h3>
+      <p>What else feels off? Pick a primary direction; add notes as annotations if you'd tweak specifics.</p>
+      <div class="qgrid" data-opt="dash">
+        <label class="opt" data-v="card per group"><div><span class="t">Card per group (recommended)</span><div class="d">Matches the categories page: card header = group with chevron, children nest inside. Consistent across the app.</div></div></label>
+        <label class="opt" data-v="inline budget row"><div><span class="t">Inline budget row</span><div class="d">One row per category, budget bar inline, no duplicate, aligned dots.</div></div></label>
+        <label class="opt" data-v="just clean current"><div><span class="t">Keep structure, clean it</span><div class="d">Fix the double indent, drop duplicate total, keep two-line rows.</div></div></label>
+      </div>
+      <div class="submit"><button type="submit" class="btn">Queue dashboard direction</button><button type="button" class="btn ghost" onclick="clearQ('dash')">Reset</button></div>
+      <div class="queued" id="queued-dash"></div>
+    </form>
+  </div>
+
+  <p style="color:var(--text2);font-size:12px;margin-top:22px">Mockups use this app's own tokens (Colors + Spacing from <code>constants/theme.ts</code>) so they preview the real UI. Swap theme above.</p>
+</div>
+
+<script>
+  function setTheme(t){ document.documentElement.dataset.theme=t; document.getElementById('lt').classList.toggle('on',t==='light'); document.getElementById('dt').classList.toggle('on',t==='dark'); }
+  document.querySelectorAll('[data-opt]').forEach(group=>{ group.querySelectorAll('.opt').forEach(o=>{ o.addEventListener('click',()=>{ group.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); o.classList.add('sel'); }); }); });
+  function current(name){ const s=document.querySelector('#q-'+name+' .opt.sel'); return s?s.dataset.v:null; }
+  function showQueued(name){ document.getElementById('queued-'+name).textContent='✓ Queued for agent'; }
+  function clearQ(name){ document.getElementById('queued-'+name).textContent=''; }
+  function indentChoice(){ const s=document.querySelector('[data-opt="indent"] .opt.sel'); if(!s) return; window.lavish.queuePrompt('Sub-category indentation: ' + s.dataset.v + '.', {tag:'choice', text:'Indent: '+s.dataset.v, data:{q:'indent', answer:s.dataset.v}}); showQueued('indent'); }
+</script>
+</body>
+</html>

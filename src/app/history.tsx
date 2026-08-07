@@ -121,7 +121,7 @@ export default function DashboardScreen() {
       });
    }
 
-   function renderNode(node: CategoryTreeNode<CategoryRow>) {
+   function renderNode(node: CategoryTreeNode<CategoryRow>, depth: number) {
       const state = budgetStateForWindow(
          categories,
          expenses,
@@ -139,51 +139,70 @@ export default function DashboardScreen() {
       const dotColor = resolveCategoryColor(categories, node.category.id);
       const hasChildren = node.children.length > 0;
       const isOpen = expanded.has(node.category.id);
+      const isTopLevel = depth === 0;
+
+      const chevron = (
+         <ThemedText type="small" themeColor="textSecondary" style={styles.chevron}>
+            {hasChildren ? (isOpen ? "▾" : "▸") : " "}
+         </ThemedText>
+      );
+
+      const header = (
+         <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => hasChildren && toggleExpand(node.category.id)}
+            style={isTopLevel ? styles.cardHeader : styles.childRow}
+         >
+            {chevron}
+            <ThemedView
+               style={[styles.dot, !isTopLevel && styles.childDot, { backgroundColor: dotColor }]}
+            />
+            <ThemedText type="smallBold" numberOfLines={1} style={styles.nodeName}>
+               {node.category.name}
+            </ThemedText>
+            <ThemedText type="smallBold">{formatAmount(spent)}</ThemedText>
+         </TouchableOpacity>
+      );
+
+      const budgetBar = hasBudget && (
+         <ThemedView
+            themeColor="backgroundSelected"
+            style={[styles.progressTrack, styles.childTrack]}
+         >
+            <ThemedView
+               style={[
+                  styles.progressFill,
+                  {
+                     width: `${Math.min(pct, 100).toFixed(1)}%` as DimensionValue,
+                     backgroundColor: isOver ? "#ef4444" : dotColor,
+                  },
+               ]}
+            />
+         </ThemedView>
+      );
+
+      if (isTopLevel) {
+         return (
+            <ThemedView
+               key={node.category.id}
+               themeColor="backgroundElement"
+               style={styles.groupCard}
+            >
+               {header}
+               {hasChildren && isOpen && (
+                  <View style={[styles.cardBody, { borderTopColor: theme.backgroundSelected }]}>
+                     {node.children.map((child) => renderNode(child, depth + 1))}
+                  </View>
+               )}
+            </ThemedView>
+         );
+      }
 
       return (
          <View key={node.category.id}>
-            <TouchableOpacity
-               activeOpacity={0.7}
-               onPress={() => hasChildren && toggleExpand(node.category.id)}
-               style={[styles.nodeRow, { paddingLeft: node.depth * Spacing.four }]}
-            >
-               <ThemedText type="small" themeColor="textSecondary" style={styles.chevron}>
-                  {hasChildren ? (isOpen ? "▾" : "▸") : " "}
-               </ThemedText>
-               <ThemedView style={[styles.dot, { backgroundColor: dotColor }]} />
-               <ThemedText type="smallBold" numberOfLines={1} style={styles.nodeName}>
-                  {node.category.name}
-               </ThemedText>
-               <ThemedText type="smallBold">{formatAmount(spent)}</ThemedText>
-            </TouchableOpacity>
-
-            {hasBudget && (
-               <View style={[styles.budgetRow, { paddingLeft: node.depth * Spacing.four }]}>
-                  <ThemedView
-                     themeColor="backgroundSelected"
-                     style={[styles.progressTrack, { marginLeft: Spacing.four }]}
-                  >
-                     <ThemedView
-                        style={[
-                           styles.progressFill,
-                           {
-                              width: `${Math.min(pct, 100).toFixed(1)}%` as DimensionValue,
-                              backgroundColor: isOver ? "#ef4444" : dotColor,
-                           },
-                        ]}
-                     />
-                  </ThemedView>
-                  <ThemedText type="small" themeColor={isOver ? "text" : "textSecondary"}>
-                     {formatAmount(spent)} / {formatAmount(available)}
-                  </ThemedText>
-               </View>
-            )}
-
-            {hasChildren &&
-               isOpen &&
-               node.children.map((child) => (
-                  <View key={child.category.id}>{renderNode(child)}</View>
-               ))}
+            {header}
+            {budgetBar}
+            {hasChildren && isOpen && node.children.map((child) => renderNode(child, depth + 1))}
          </View>
       );
    }
@@ -278,7 +297,7 @@ export default function DashboardScreen() {
                      Loading…
                   </ThemedText>
                ) : (
-                  tree.map((node) => renderNode(node))
+                  tree.map((node) => renderNode(node, 0))
                )}
             </ScrollView>
          </View>
@@ -348,12 +367,6 @@ const styles = StyleSheet.create({
       paddingTop: Spacing.six,
       textAlign: "center",
    },
-   nodeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: Spacing.two,
-      paddingVertical: Spacing.two,
-   },
    chevron: {
       width: Spacing.three,
       textAlign: "center",
@@ -366,17 +379,41 @@ const styles = StyleSheet.create({
    nodeName: {
       flex: 1,
    },
-   budgetRow: {
+   groupCard: {
+      borderRadius: Spacing.three,
+      overflow: "hidden",
+   },
+   cardHeader: {
       flexDirection: "row",
       alignItems: "center",
       gap: Spacing.two,
-      paddingBottom: Spacing.two,
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.two,
+   },
+   cardBody: {
+      paddingBottom: Spacing.one,
+      borderTopWidth: 1,
+   },
+   childRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: Spacing.two,
+      paddingHorizontal: Spacing.three,
+      paddingVertical: Spacing.one,
+   },
+   childDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
    },
    progressTrack: {
-      flex: 1,
       height: 6,
       borderRadius: 3,
       overflow: "hidden",
+   },
+   childTrack: {
+      marginBottom: Spacing.one,
+      marginLeft: Spacing.five,
    },
    progressFill: {
       height: "100%",

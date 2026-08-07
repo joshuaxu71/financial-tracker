@@ -287,11 +287,12 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const available = budget?.available ?? 0;
       const pct = available > 0 ? Math.min((spent / available) * 100, 100) : 0;
       const isOver = available > 0 && spent > available;
+      const showBudgetBar = budget != null && !(hasChildren && isExpanded);
 
       return (
          <View key={node.category.id}>
             <TouchableOpacity
-               style={[styles.row, { paddingLeft: Spacing.four + node.depth * Spacing.three }]}
+               style={styles.row}
                activeOpacity={0.7}
                onPress={() => (hasChildren ? toggle(node.category.id) : openEdit(node.category))}
                onLongPress={() => openEdit(node.category)}
@@ -315,7 +316,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         </ThemedText>
                      )}
                   </View>
-                  {budget != null && (
+                  {showBudgetBar && (
                      <View style={styles.rowBudget}>
                         <ThemedText
                            type="small"
@@ -339,7 +340,11 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                   )}
                </View>
             </TouchableOpacity>
-            {hasChildren && isExpanded && node.children.map((child) => renderNode(child))}
+            {hasChildren && isExpanded && (
+               <View style={[styles.childGroup, { borderTopColor: theme.backgroundSelected }]}>
+                  {node.children.map((child) => renderNode(child))}
+               </View>
+            )}
          </View>
       );
    }
@@ -620,7 +625,12 @@ const styles = StyleSheet.create({
       gap: Spacing.two,
       minHeight: 44,
       paddingRight: Spacing.four,
+      paddingLeft: Spacing.four,
       paddingVertical: Spacing.one,
+   },
+   childGroup: {
+      paddingVertical: Spacing.one,
+      borderTopWidth: 1,
    },
    rowMain: { flex: 1, gap: Spacing.half, minWidth: 0 },
    rowTop: {
