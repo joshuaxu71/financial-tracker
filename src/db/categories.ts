@@ -1,6 +1,6 @@
 import type { AbstractPowerSyncDatabase, Transaction } from "@powersync/react-native";
 
-import { currentYearMonth, today } from "@/utils/date";
+import { today } from "@/utils/date";
 import { makeUuid } from "@/utils/id";
 
 export type CategoryRow = {
@@ -14,10 +14,11 @@ export type CategoryRow = {
    budget_start: string | null;
 };
 
-export type BudgetHistoryRow = {
+export type BudgetMovementRow = {
+   id: string;
    category_id: string;
-   month: string;
-   allocation: number;
+   date: string;
+   amount: number;
 };
 
 export async function getAllCategories(db: AbstractPowerSyncDatabase): Promise<CategoryRow[]> {
@@ -26,37 +27,61 @@ export async function getAllCategories(db: AbstractPowerSyncDatabase): Promise<C
    );
 }
 
-export async function getBudgetHistory(db: AbstractPowerSyncDatabase): Promise<BudgetHistoryRow[]> {
-   return db.getAll<BudgetHistoryRow>(
-      "SELECT category_id, month, allocation FROM budget_history ORDER BY month",
+export async function getBudgetMovements(
+   db: AbstractPowerSyncDatabase,
+): Promise<BudgetMovementRow[]> {
+   return db.getAll<BudgetMovementRow>(
+      "SELECT id, category_id, date, amount FROM budget_movements ORDER BY date",
    );
 }
 
-function currentMonth(): string {
-   const { year, month } = currentYearMonth();
-   return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-async function upsertBudgetHistoryTx(
-   db: Pick<AbstractPowerSyncDatabase, "getOptional" | "execute"> | Transaction,
+export async function addBudgetMovement(
+   db: AbstractPowerSyncDatabase,
    categoryId: string,
-   month: string,
-   allocation: number,
+   date: string,
+   amount: number,
 ): Promise<void> {
-   const existing = await db.getOptional<{ id: string }>(
-      "SELECT id FROM budget_history WHERE category_id = ? AND month = ?",
-      [categoryId, month],
+   await db.execute(
+      "INSERT INTO budget_movements (id, category_id, date, amount) VALUES (?, ?, ?, ?)",
+      [makeUuid(), categoryId, date, amount],
    );
-   if (existing) {
-      await db.execute("UPDATE budget_history SET allocation = ? WHERE id = ?", [
-         allocation,
-         existing.id,
-      ]);
-   } else {
-      await db.execute(
-         "INSERT INTO budget_history (id, category_id, month, allocation) VALUES (?, ?, ?, ?)",
-         [makeUuid(), categoryId, month, allocation],
-      );
+}
+
+export async function ensureMonthlyAllocations(
+   db: AbstractPowerSyncDatabase,
+   categories: CategoryRow[],
+): Promise<void> {
+   const now = new Date();
+   const currentYear = now.getFullYear();
+   const currentMonth = now.getMonth() + 1;
+
+   for (const cat of categories) {
+      if (cat.budget == null || cat.budget_start == null) continue;
+
+      const startDate = new Date(cat.budget_start + "T00:00:00");
+      if (isNaN(startDate.getTime())) continue;
+
+      let year = startDate.getFullYear();
+      let month = startDate.getMonth() + 1;
+
+      while (year < currentYear || (year === currentYear && month <= currentMonth)) {
+         const dateStr = `${year}-${String(month).padStart(2, "0")}-01`;
+         const existing = await db.getOptional<{ id: string }>(
+            "SELECT id FROM budget_movements WHERE category_id = ? AND date = ?",
+            [cat.id, dateStr],
+         );
+         if (!existing) {
+            await db.execute(
+               "INSERT INTO budget_movements (id, category_id, date, amount) VALUES (?, ?, ?, ?)",
+               [makeUuid(), cat.id, dateStr, cat.budget],
+            );
+         }
+         month++;
+         if (month > 12) {
+            month = 1;
+            year++;
+         }
+      }
    }
 }
 
@@ -117,24 +142,19 @@ export async function insertCategory(
    );
    const budgetStart = input.budget != null ? today() : null;
    const id = makeUuid();
-   await db.writeTransaction(async (tx: Transaction) => {
-      await tx.execute(
-         "INSERT INTO categories (id, slug, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-         [
-            id,
-            slug,
-            input.name.trim(),
-            nextOrder?.n ?? 1,
-            input.parent_id,
-            input.color,
-            input.budget,
-            budgetStart,
-         ],
-      );
-      if (input.budget != null) {
-         await upsertBudgetHistoryTx(tx, id, currentMonth(), input.budget);
-      }
-   });
+   await db.execute(
+      "INSERT INTO categories (id, slug, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [
+         id,
+         slug,
+         input.name.trim(),
+         nextOrder?.n ?? 1,
+         input.parent_id,
+         input.color,
+         input.budget,
+         budgetStart,
+      ],
+   );
    return id;
 }
 
@@ -168,50 +188,25 @@ export async function updateCategory(
       params.push(input.color);
    }
 
-   let nextBudget = current?.budget ?? null;
-   let nextBudgetStart = current?.budget_start ?? null;
    if (input.budget !== undefined) {
       if (input.budget != null) {
          if (current?.budget == null) {
-            nextBudgetStart = today();
+            sets.push("budget_start = ?");
+            params.push(today());
          }
-         nextBudget = input.budget;
+         sets.push("budget = ?");
+         params.push(input.budget);
       } else {
-         nextBudget = null;
-         nextBudgetStart = null;
+         sets.push("budget = ?");
+         params.push(null);
+         sets.push("budget_start = ?");
+         params.push(null);
       }
-      sets.push("budget = ?");
-      params.push(nextBudget);
-      sets.push("budget_start = ?");
-      params.push(nextBudgetStart);
    }
 
    if (sets.length === 0) return;
    params.push(id);
    await db.execute(`UPDATE categories SET ${sets.join(", ")} WHERE id = ?`, params);
-
-   if (input.budget !== undefined) {
-      if (input.budget != null) {
-         await upsertBudgetHistoryTx(db, id, currentMonth(), input.budget);
-      } else {
-         await db.execute("DELETE FROM budget_history WHERE category_id = ?", [id]);
-      }
-   }
-}
-
-export async function resetBudgetAccumulation(
-   db: AbstractPowerSyncDatabase,
-   id: string,
-): Promise<void> {
-   const row = await db.getOptional<{ budget: number | null }>(
-      "SELECT budget FROM categories WHERE id = ?",
-      [id],
-   );
-   await db.execute("UPDATE categories SET budget_start = ? WHERE id = ?", [today(), id]);
-   await db.execute("DELETE FROM budget_history WHERE category_id = ?", [id]);
-   if (row?.budget != null) {
-      await upsertBudgetHistoryTx(db, id, currentMonth(), row.budget);
-   }
 }
 
 export async function deleteCategory(
@@ -226,8 +221,7 @@ export async function deleteCategory(
             id,
          ]);
       }
-      await tx.execute("DELETE FROM budget_categories WHERE category_id = ?", [id]);
-      await tx.execute("DELETE FROM budget_history WHERE category_id = ?", [id]);
+      await tx.execute("DELETE FROM budget_movements WHERE category_id = ?", [id]);
       const parentRow = await tx.getOptional<{ parent_id: string | null }>(
          "SELECT parent_id FROM categories WHERE id = ?",
          [id],

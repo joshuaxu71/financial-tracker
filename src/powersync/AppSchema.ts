@@ -49,6 +49,14 @@ export const AppSchema = new Schema({
       },
       { indexes: { month_idx: ["month"], category_idx: ["category_id"] } },
    ),
+   budget_movements: new Table(
+      {
+         category_id: column.text,
+         date: column.text,
+         amount: column.real,
+      },
+      { indexes: { category_idx: ["category_id"], date_idx: ["date"] } },
+   ),
    sources: new Table(
       {
          name: column.text,

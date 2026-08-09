@@ -14,10 +14,10 @@ import {
 import { Spacing } from "@/constants/theme";
 import { useTabNavigation } from "@/context/tab-navigation";
 import {
-   type BudgetHistoryRow,
+   type BudgetMovementRow,
    type CategoryRow,
    getAllCategories,
-   getBudgetHistory,
+   getBudgetMovements,
 } from "@/db/categories";
 import { type Expense, getAllExpenses } from "@/db/expenses";
 import { getRates } from "@/db/rates";
@@ -43,22 +43,22 @@ export default function DashboardScreen() {
    const [filterGroupId, setFilterGroupId] = useState<string | null>(null);
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [expenses, setExpenses] = useState<Expense[]>([]);
-   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
+   const [movements, setMovements] = useState<BudgetMovementRow[]>([]);
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
    const [showMonthPicker, setShowMonthPicker] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
 
    const load = useCallback(async () => {
-      const [c, e, h, s, r] = await Promise.all([
+      const [c, e, m, s, r] = await Promise.all([
          getAllCategories(db),
          getAllExpenses(db),
-         getBudgetHistory(db),
+         getBudgetMovements(db),
          getAllSources(db),
          getRates(db),
       ]);
       setCategories(c);
       setExpenses(convertExpensesToJpy(e, s, r));
-      setHistory(h);
+      setMovements(m);
       setExpanded(new Set(c.filter((cat) => cat.parent_id === null).map((cat) => cat.id)));
       setIsLoading(false);
    }, [db]);
@@ -125,7 +125,7 @@ export default function DashboardScreen() {
       const state = budgetStateForWindow(
          categories,
          expenses,
-         history,
+         movements,
          node.category.id,
          year,
          month,
