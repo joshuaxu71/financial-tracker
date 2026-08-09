@@ -30,7 +30,7 @@ export async function insertTransactions(
    await db.writeTransaction(async (tx: DbTx) => {
       for (const [i, t] of transactions.entries()) {
          await tx.execute(
-            "INSERT INTO transactions (id, date, source_id, amount, category_id, description, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO transaction (id, date, source_id, amount, category_id, description, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
                makeId(),
                t.date,
@@ -55,17 +55,17 @@ export async function getTransactionsByMonth(
    const from = `${year}-${mm}-01`;
    const to = `${year}-${mm}-31`;
    return db.getAll<Transaction>(
-      "SELECT * FROM transactions WHERE category_id IS NOT NULL AND date >= ? AND date <= ? ORDER BY date DESC, COALESCE(sort_order, 0) ASC, created_at ASC",
+      "SELECT * FROM transaction WHERE category_id IS NOT NULL AND date >= ? AND date <= ? ORDER BY date DESC, COALESCE(sort_order, 0) ASC, created_at ASC",
       [from, to],
    );
 }
 
 export async function getAllTransactions(db: AbstractPowerSyncDatabase): Promise<Transaction[]> {
-   return db.getAll<Transaction>("SELECT * FROM transactions");
+   return db.getAll<Transaction>("SELECT * FROM transaction");
 }
 
 export async function deleteTransaction(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
-   await db.execute("DELETE FROM transactions WHERE id = ?", [id]);
+   await db.execute("DELETE FROM transaction WHERE id = ?", [id]);
 }
 
 export async function updateTransactionSortOrder(
@@ -73,5 +73,5 @@ export async function updateTransactionSortOrder(
    id: string,
    sortOrder: number,
 ): Promise<void> {
-   await db.execute("UPDATE transactions SET sort_order = ? WHERE id = ?", [sortOrder, id]);
+   await db.execute("UPDATE transaction SET sort_order = ? WHERE id = ?", [sortOrder, id]);
 }

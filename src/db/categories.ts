@@ -23,7 +23,7 @@ export type BudgetMovementRow = {
 
 export async function getAllCategories(db: AbstractPowerSyncDatabase): Promise<CategoryRow[]> {
    return db.getAll<CategoryRow>(
-      "SELECT id, slug, name, display_order, parent_id, color, budget, budget_start FROM categories ORDER BY display_order, id",
+      "SELECT id, slug, name, display_order, parent_id, color, budget, budget_start FROM category ORDER BY display_order, id",
    );
 }
 
@@ -31,7 +31,7 @@ export async function getBudgetMovements(
    db: AbstractPowerSyncDatabase,
 ): Promise<BudgetMovementRow[]> {
    return db.getAll<BudgetMovementRow>(
-      "SELECT id, category_id, date, amount FROM budget_movements ORDER BY date",
+      "SELECT id, category_id, date, amount FROM budget_movement ORDER BY date",
    );
 }
 
@@ -67,12 +67,12 @@ export async function ensureMonthlyAllocations(
       while (year < currentYear || (year === currentYear && month <= currentMonth)) {
          const dateStr = `${year}-${String(month).padStart(2, "0")}-01`;
          const existing = await db.getOptional<{ id: string }>(
-            "SELECT id FROM budget_movements WHERE category_id = ? AND date = ?",
+            "SELECT id FROM budget_movement WHERE category_id = ? AND date = ?",
             [cat.id, dateStr],
          );
          if (!existing) {
             await db.execute(
-               "INSERT INTO budget_movements (id, category_id, date, amount) VALUES (?, ?, ?, ?)",
+               "INSERT INTO budget_movement (id, category_id, date, amount) VALUES (?, ?, ?, ?)",
                [makeUuid(), cat.id, dateStr, cat.budget],
             );
          }
@@ -89,7 +89,7 @@ export async function getCategoryUsage(
    db: AbstractPowerSyncDatabase,
 ): Promise<Map<string, number>> {
    const rows = await db.getAll<{ category_id: string; count: number }>(
-      "SELECT category_id, COUNT(*) AS count FROM transactions WHERE category_id IS NOT NULL GROUP BY category_id",
+      "SELECT category_id, COUNT(*) AS count FROM transaction WHERE category_id IS NOT NULL GROUP BY category_id",
    );
    return new Map(rows.map((r) => [r.category_id, r.count]));
 }
@@ -103,7 +103,7 @@ export async function getCategorySpendingByMonth(
    const from = `${year}-${mm}-01`;
    const to = `${year}-${mm}-31`;
    const rows = await db.getAll<{ category_id: string; total: number }>(
-      "SELECT category_id, SUM(-amount) AS total FROM transactions WHERE category_id IS NOT NULL AND date >= ? AND date <= ? GROUP BY category_id",
+      "SELECT category_id, SUM(-amount) AS total FROM transaction WHERE category_id IS NOT NULL AND date >= ? AND date <= ? GROUP BY category_id",
       [from, to],
    );
    return new Map(rows.map((r) => [r.category_id, r.total]));
@@ -119,7 +119,7 @@ async function slugify(db: AbstractPowerSyncDatabase, name: string): Promise<str
    let slug = base;
    let i = 2;
    while (
-      (await db.getOptional<{ id: string }>("SELECT id FROM categories WHERE slug = ?", [slug])) !=
+      (await db.getOptional<{ id: string }>("SELECT id FROM category WHERE slug = ?", [slug])) !=
       null
    ) {
       slug = `${base}-${i++}`;
@@ -138,12 +138,12 @@ export async function insertCategory(
 ): Promise<string> {
    const slug = await slugify(db, input.name);
    const nextOrder = await db.getOptional<{ n: number }>(
-      "SELECT COALESCE(MAX(display_order), 0) + 1 AS n FROM categories",
+      "SELECT COALESCE(MAX(display_order), 0) + 1 AS n FROM category",
    );
    const budgetStart = input.budget != null ? today() : null;
    const id = makeUuid();
    await db.execute(
-      "INSERT INTO categories (id, slug, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO category (id, slug, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [
          id,
          slug,
@@ -169,7 +169,7 @@ export async function updateCategory(
    },
 ): Promise<void> {
    const current = await db.getOptional<{ budget: number | null; budget_start: string | null }>(
-      "SELECT budget, budget_start FROM categories WHERE id = ?",
+      "SELECT budget, budget_start FROM category WHERE id = ?",
       [id],
    );
 
@@ -206,7 +206,7 @@ export async function updateCategory(
 
    if (sets.length === 0) return;
    params.push(id);
-   await db.execute(`UPDATE categories SET ${sets.join(", ")} WHERE id = ?`, params);
+   await db.execute(`UPDATE category SET ${sets.join(", ")} WHERE id = ?`, params);
 }
 
 export async function deleteCategory(
@@ -216,20 +216,20 @@ export async function deleteCategory(
 ): Promise<void> {
    await db.writeTransaction(async (tx: Transaction) => {
       if (reassignToId != null) {
-         await tx.execute("UPDATE transactions SET category_id = ? WHERE category_id = ?", [
+         await tx.execute("UPDATE transaction SET category_id = ? WHERE category_id = ?", [
             reassignToId,
             id,
          ]);
       }
-      await tx.execute("DELETE FROM budget_movements WHERE category_id = ?", [id]);
+      await tx.execute("DELETE FROM budget_movement WHERE category_id = ?", [id]);
       const parentRow = await tx.getOptional<{ parent_id: string | null }>(
-         "SELECT parent_id FROM categories WHERE id = ?",
+         "SELECT parent_id FROM category WHERE id = ?",
          [id],
       );
-      await tx.execute("UPDATE categories SET parent_id = ? WHERE parent_id = ?", [
+      await tx.execute("UPDATE category SET parent_id = ? WHERE parent_id = ?", [
          parentRow?.parent_id ?? null,
          id,
       ]);
-      await tx.execute("DELETE FROM categories WHERE id = ?", [id]);
+      await tx.execute("DELETE FROM category WHERE id = ?", [id]);
    });
 }

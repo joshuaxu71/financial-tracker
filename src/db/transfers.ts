@@ -25,7 +25,7 @@ export type TransferInput = {
 };
 
 export async function getAllTransfers(db: AbstractPowerSyncDatabase): Promise<TransferRow[]> {
-   return db.getAll<TransferRow>("SELECT * FROM transfers ORDER BY date DESC, created_at DESC");
+   return db.getAll<TransferRow>("SELECT * FROM transfer ORDER BY date DESC, created_at DESC");
 }
 
 export async function insertTransfer(
@@ -33,7 +33,7 @@ export async function insertTransfer(
    input: TransferInput,
 ): Promise<void> {
    await db.execute(
-      `INSERT INTO transfers
+      `INSERT INTO transfer
          (id, from_source_id, to_source_id, from_amount, to_amount, exchange_rate, date, description, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -56,7 +56,7 @@ export async function updateTransfer(
    input: TransferInput,
 ): Promise<void> {
    await db.execute(
-      `UPDATE transfers SET
+      `UPDATE transfer SET
          from_source_id = ?, to_source_id = ?, from_amount = ?, to_amount = ?, exchange_rate = ?, date = ?, description = ?
        WHERE id = ?`,
       [
@@ -73,5 +73,5 @@ export async function updateTransfer(
 }
 
 export async function deleteTransfer(db: AbstractPowerSyncDatabase, id: string): Promise<void> {
-   await db.execute("DELETE FROM transfers WHERE id = ?", [id]);
+   await db.execute("DELETE FROM transfer WHERE id = ?", [id]);
 }

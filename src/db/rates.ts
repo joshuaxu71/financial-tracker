@@ -7,7 +7,7 @@ export type RateRow = { id: string; currency: string; rate: number; updated_at: 
 
 export async function getRates(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
    const rows = await db.getAll<RateRow>(
-      "SELECT id, currency, rate, updated_at FROM exchange_rates",
+      "SELECT id, currency, rate, updated_at FROM exchange_rate",
    );
    return new Map(rows.map((r) => [r.currency, r.rate]));
 }
@@ -20,11 +20,11 @@ async function upsertRates(
    for (const [currency, rate] of Object.entries(rates)) {
       if (!Number.isFinite(rate) || rate <= 0) continue;
       const existing = await db.getOptional<{ id: string }>(
-         "SELECT id FROM exchange_rates WHERE currency = ?",
+         "SELECT id FROM exchange_rate WHERE currency = ?",
          [currency],
       );
       await db.execute(
-         "INSERT INTO exchange_rates (id, currency, rate, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET rate = excluded.rate, updated_at = excluded.updated_at",
+         "INSERT INTO exchange_rate (id, currency, rate, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET rate = excluded.rate, updated_at = excluded.updated_at",
          [existing?.id ?? makeUuid(), currency, rate, now],
       );
    }

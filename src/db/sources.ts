@@ -13,12 +13,12 @@ export type SourceRow = {
 };
 
 export async function getAllSources(db: AbstractPowerSyncDatabase): Promise<SourceRow[]> {
-   return db.getAll<SourceRow>("SELECT * FROM sources ORDER BY sort_order, id");
+   return db.getAll<SourceRow>("SELECT * FROM source ORDER BY sort_order, id");
 }
 
 export async function getSourceUsage(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
    const rows = await db.getAll<{ source_id: string; count: number }>(
-      "SELECT source_id, COUNT(*) AS count FROM transactions WHERE category_id IS NOT NULL GROUP BY source_id",
+      "SELECT source_id, COUNT(*) AS count FROM transaction WHERE category_id IS NOT NULL GROUP BY source_id",
    );
    return new Map(rows.map((r) => [r.source_id, r.count]));
 }
@@ -28,11 +28,11 @@ export async function insertSource(
    input: { name: string; currency: string; color: string | null; opening_balance: number },
 ): Promise<string> {
    const nextOrder = await db.getOptional<{ n: number }>(
-      "SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM sources",
+      "SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM source",
    );
    const id = makeUuid();
    await db.execute(
-      "INSERT INTO sources (id, name, currency, color, opening_balance, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO source (id, name, currency, color, opening_balance, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
          id,
          input.name.trim(),
@@ -76,7 +76,7 @@ export async function updateSource(
    }
    if (sets.length === 0) return;
    params.push(id);
-   await db.execute(`UPDATE sources SET ${sets.join(", ")} WHERE id = ?`, params);
+   await db.execute(`UPDATE source SET ${sets.join(", ")} WHERE id = ?`, params);
 }
 
 export async function deleteSource(
@@ -87,17 +87,15 @@ export async function deleteSource(
    await db.writeTransaction(async (tx: DbTx) => {
       if (reassignToId != null) {
          await tx.execute(
-            "UPDATE transactions SET source_id = ? WHERE source_id = ? AND category_id IS NOT NULL",
+            "UPDATE transaction SET source_id = ? WHERE source_id = ? AND category_id IS NOT NULL",
             [reassignToId, id],
          );
       }
-      await tx.execute("DELETE FROM transactions WHERE source_id = ? AND category_id IS NULL", [
-         id,
-      ]);
-      await tx.execute("DELETE FROM transfers WHERE from_source_id = ? OR to_source_id = ?", [
+      await tx.execute("DELETE FROM transaction WHERE source_id = ? AND category_id IS NULL", [id]);
+      await tx.execute("DELETE FROM transfer WHERE from_source_id = ? OR to_source_id = ?", [
          id,
          id,
       ]);
-      await tx.execute("DELETE FROM sources WHERE id = ?", [id]);
+      await tx.execute("DELETE FROM source WHERE id = ?", [id]);
    });
 }

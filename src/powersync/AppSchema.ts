@@ -1,7 +1,7 @@
 import { Schema, Table, column } from "@powersync/common";
 
 export const AppSchema = new Schema({
-   categories: new Table(
+   category: new Table(
       {
          slug: column.text,
          name: column.text,
@@ -13,7 +13,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { slug_idx: ["slug"], parent_idx: ["parent_id"] } },
    ),
-   transactions: new Table(
+   transaction: new Table(
       {
          date: column.text,
          source_id: column.text,
@@ -25,7 +25,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { date_idx: ["date"], category_idx: ["category_id"], source_idx: ["source_id"] } },
    ),
-   budget_movements: new Table(
+   budget_movement: new Table(
       {
          category_id: column.text,
          date: column.text,
@@ -33,7 +33,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { category_idx: ["category_id"], date_idx: ["date"] } },
    ),
-   sources: new Table(
+   source: new Table(
       {
          name: column.text,
          currency: column.text,
@@ -44,7 +44,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { sort_idx: ["sort_order"] } },
    ),
-   exchange_rates: new Table(
+   exchange_rate: new Table(
       {
          currency: column.text,
          rate: column.real,
@@ -52,7 +52,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { currency_idx: ["currency"] } },
    ),
-   transfers: new Table(
+   transfer: new Table(
       {
          from_source_id: column.text,
          to_source_id: column.text,
