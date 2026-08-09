@@ -13,41 +13,17 @@ export const AppSchema = new Schema({
       },
       { indexes: { slug_idx: ["slug"], parent_idx: ["parent_id"] } },
    ),
-   expenses: new Table(
+   transactions: new Table(
       {
          date: column.text,
-         category_id: column.text,
          source_id: column.text,
          amount: column.real,
+         category_id: column.text,
          description: column.text,
-         created_at: column.text,
          sort_order: column.real,
+         created_at: column.text,
       },
       { indexes: { date_idx: ["date"], category_idx: ["category_id"], source_idx: ["source_id"] } },
-   ),
-   budgets: new Table(
-      {
-         name: column.text,
-         amount: column.real,
-         period: column.text,
-         created_at: column.text,
-      },
-      { indexes: { created_idx: ["created_at"] } },
-   ),
-   budget_categories: new Table(
-      {
-         budget_id: column.text,
-         category_id: column.text,
-      },
-      { indexes: { budget_idx: ["budget_id"], category_idx: ["category_id"] } },
-   ),
-   budget_history: new Table(
-      {
-         category_id: column.text,
-         month: column.text,
-         allocation: column.real,
-      },
-      { indexes: { month_idx: ["month"], category_idx: ["category_id"] } },
    ),
    budget_movements: new Table(
       {
@@ -67,15 +43,6 @@ export const AppSchema = new Schema({
          created_at: column.text,
       },
       { indexes: { sort_idx: ["sort_order"] } },
-   ),
-   income_entries: new Table(
-      {
-         source_id: column.text,
-         amount: column.real,
-         date: column.text,
-         created_at: column.text,
-      },
-      { indexes: { date_idx: ["date"], source_idx: ["source_id"] } },
    ),
    exchange_rates: new Table(
       {

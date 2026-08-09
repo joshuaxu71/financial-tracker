@@ -7,7 +7,8 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { formatCurrencyAmount } from "@/constants/currencies";
 import { BottomTabInset, Spacing } from "@/constants/theme";
-import { type IncomeRow, type SourceRow, deleteIncome } from "@/db/sources";
+import { type SourceRow } from "@/db/sources";
+import { type Transaction, deleteTransaction } from "@/db/transactions";
 import { type TransferRow, deleteTransfer } from "@/db/transfers";
 import { IncomeModal } from "@/features/finance/income-modal";
 import { TransferModal } from "@/features/finance/transfer-modal";
@@ -19,7 +20,7 @@ type Props = {
    visible: boolean;
    source: SourceRow | null;
    sources: SourceRow[];
-   income: IncomeRow[];
+   income: Transaction[];
    transfers: TransferRow[];
    balance: number;
    jpy: number;
@@ -48,11 +49,11 @@ export function SourceDetailModal({
    const active = source;
 
    async function handleDeleteIncome(id: string) {
-      await deleteIncome(db, id);
+      await deleteTransaction(db, id);
       onChanged();
    }
 
-   function confirmDeleteIncome(entry: IncomeRow) {
+   function confirmDeleteIncome(entry: Transaction) {
       Alert.alert(
          "Delete entry",
          `Delete income of ${formatCurrencyAmount(entry.amount, active.currency)}?`,

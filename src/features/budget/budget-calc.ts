@@ -1,18 +1,18 @@
 import { type BudgetMovementRow, type CategoryRow } from "@/db/categories";
-import { type Expense } from "@/db/expenses";
 import { convertToJpy } from "@/db/rates";
 import { type SourceRow } from "@/db/sources";
+import { type Transaction } from "@/db/transactions";
 import { fromMonthKey, monthKey } from "@/utils/date";
 
-export function convertExpensesToJpy(
-   expenses: readonly Expense[],
+export function convertTransactionsToJpy(
+   transactions: readonly Transaction[],
    sources: readonly SourceRow[],
    rates: ReadonlyMap<string, number>,
-): Expense[] {
+): Transaction[] {
    const currency = new Map(sources.map((s) => [s.id, s.currency]));
-   return expenses.map((e) => ({
-      ...e,
-      amount: convertToJpy(e.amount, currency.get(e.source_id) ?? "JPY", rates),
+   return transactions.map((t) => ({
+      ...t,
+      amount: convertToJpy(t.amount, currency.get(t.source_id) ?? "JPY", rates),
    }));
 }
 
@@ -38,7 +38,7 @@ export type BudgetState = {
 
 export function budgetStateForMonth(
    categories: readonly CategoryRow[],
-   expenses: readonly Expense[],
+   transactions: readonly Transaction[],
    movements: readonly BudgetMovementRow[],
    categoryId: string,
    year: number,
@@ -57,12 +57,12 @@ export function budgetStateForMonth(
 
    let spent = 0;
    let spentBefore = 0;
-   for (const e of expenses) {
-      if (!ids.has(e.category_id)) continue;
-      if (e.date >= monthStart && e.date <= monthEnd) {
-         spent += e.amount;
-      } else if (e.date < monthStart && e.date >= since) {
-         spentBefore += e.amount;
+   for (const t of transactions) {
+      if (t.category_id == null || !ids.has(t.category_id)) continue;
+      if (t.date >= monthStart && t.date <= monthEnd) {
+         spent += -t.amount;
+      } else if (t.date < monthStart && t.date >= since) {
+         spentBefore += -t.amount;
       }
    }
 
@@ -75,7 +75,7 @@ export function budgetStateForMonth(
 
 export function budgetStateForWindow(
    categories: readonly CategoryRow[],
-   expenses: readonly Expense[],
+   transactions: readonly Transaction[],
    movements: readonly BudgetMovementRow[],
    categoryId: string,
    year: number,
@@ -94,9 +94,10 @@ export function budgetStateForWindow(
       .reduce((sum, m) => sum + m.amount, 0);
 
    let spent = 0;
-   for (const e of expenses) {
-      if (ids.has(e.category_id) && e.date >= windowStart && e.date <= windowEnd) {
-         spent += e.amount;
+   for (const t of transactions) {
+      if (t.category_id == null || !ids.has(t.category_id)) continue;
+      if (t.date >= windowStart && t.date <= windowEnd) {
+         spent += -t.amount;
       }
    }
 

@@ -16,9 +16,14 @@ import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
 import { useTabNavigation } from "@/context/tab-navigation";
 import { type CategoryRow, getAllCategories } from "@/db/categories";
-import { type Expense, deleteExpense, getExpensesByMonth, insertExpenses } from "@/db/expenses";
 import { convertToJpy, getRates } from "@/db/rates";
 import { type SourceRow, getAllSources } from "@/db/sources";
+import {
+   type Transaction,
+   deleteTransaction,
+   getTransactionsByMonth,
+   insertTransactions,
+} from "@/db/transactions";
 import { CategoriesModal } from "@/features/categories/categories-modal";
 import { CategoryFilter } from "@/features/journal/category-filter";
 import { JournalEntryRow } from "@/features/journal/journal-entry-row";
@@ -36,7 +41,7 @@ const TODAY = today();
 type DaySection = {
    date: string;
    title: string;
-   data: Expense[];
+   data: Transaction[];
    dailyTotal: number;
 };
 
@@ -49,7 +54,7 @@ export default function TrackScreen() {
 
    const [viewYear, setViewYear] = useState(NOW_YEAR);
    const [viewMonth, setViewMonth] = useState(NOW_MONTH);
-   const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [expenses, setExpenses] = useState<Transaction[]>([]);
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [sources, setSources] = useState<SourceRow[]>([]);
    const [rates, setRates] = useState<Map<string, number>>(new Map());
@@ -108,7 +113,7 @@ export default function TrackScreen() {
    }
 
    const loadExpenses = useCallback(async () => {
-      const data = await getExpensesByMonth(db, viewYear, viewMonth);
+      const data = await getTransactionsByMonth(db, viewYear, viewMonth);
       setExpenses(data);
    }, [db, viewYear, viewMonth]);
 
@@ -148,12 +153,12 @@ export default function TrackScreen() {
 
    const sections = useMemo<DaySection[]>(() => {
       const filtered = filterGroupId
-         ? expenses.filter((e) => isUnderGroup(e.category_id, filterGroupId))
+         ? expenses.filter((e) => e.category_id && isUnderGroup(e.category_id, filterGroupId))
          : expenses;
 
       const sourceCurrency = new Map(sources.map((s) => [s.id, s.currency]));
-      const jpy = (e: Expense) =>
-         convertToJpy(e.amount, sourceCurrency.get(e.source_id) ?? "JPY", rates);
+      const jpy = (e: Transaction) =>
+         convertToJpy(-e.amount, sourceCurrency.get(e.source_id) ?? "JPY", rates);
 
       const daySet = new Set<string>();
       if (isCurrentMonth) daySet.add(TODAY);
@@ -203,13 +208,13 @@ export default function TrackScreen() {
       setIsSaving(true);
       try {
          const base = Date.now();
-         await insertExpenses(
+         await insertTransactions(
             db,
             entries.map((e, i) => ({
                date: e.date,
                category_id: e.row.category_id,
                source_id: e.row.source_id,
-               amount: parseFloat(e.row.amount),
+               amount: -parseFloat(e.row.amount),
                description: e.row.description.trim(),
                sort_order: base + i,
             })),
@@ -288,7 +293,7 @@ export default function TrackScreen() {
                   selectedGroupId={filterGroupId}
                   onChange={setFilterGroupId}
                />
-               <SectionList<Expense, DaySection>
+               <SectionList<Transaction, DaySection>
                   sections={sections}
                   keyExtractor={(item) => item.id}
                   renderSectionHeader={({ section }) => (
@@ -310,7 +315,7 @@ export default function TrackScreen() {
                         categories={categories}
                         sources={sources}
                         onDelete={async () => {
-                           await deleteExpense(db, item.id);
+                           await deleteTransaction(db, item.id);
                            await loadExpenses();
                         }}
                      />

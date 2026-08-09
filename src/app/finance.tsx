@@ -7,9 +7,9 @@ import { ThemedView } from "@/components/themed-view";
 import { formatCurrencyAmount } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
 import { useTabNavigation } from "@/context/tab-navigation";
-import { type Expense, getAllExpenses } from "@/db/expenses";
 import { convertToJpy, getRates, refreshRates } from "@/db/rates";
-import { type IncomeRow, type SourceRow, getAllIncome, getAllSources } from "@/db/sources";
+import { type SourceRow, getAllSources } from "@/db/sources";
+import { type Transaction, getAllTransactions } from "@/db/transactions";
 import { type TransferRow, getAllTransfers } from "@/db/transfers";
 import { SourceDetailModal } from "@/features/finance/source-detail-modal";
 import { SourcesModal } from "@/features/finance/sources-modal";
@@ -22,24 +22,21 @@ export default function FinanceScreen() {
    const { activeIndex } = useTabNavigation();
 
    const [sources, setSources] = useState<SourceRow[]>([]);
-   const [income, setIncome] = useState<IncomeRow[]>([]);
-   const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [transactions, setTransactions] = useState<Transaction[]>([]);
    const [transfers, setTransfers] = useState<TransferRow[]>([]);
    const [rates, setRates] = useState<Map<string, number>>(new Map());
    const [showSources, setShowSources] = useState(false);
    const [detailSource, setDetailSource] = useState<SourceRow | null>(null);
 
    const load = useCallback(async () => {
-      const [s, i, e, t, r] = await Promise.all([
+      const [s, txns, t, r] = await Promise.all([
          getAllSources(db),
-         getAllIncome(db),
-         getAllExpenses(db),
+         getAllTransactions(db),
          getAllTransfers(db),
          getRates(db),
       ]);
       setSources(s);
-      setIncome(i);
-      setExpenses(e);
+      setTransactions(txns);
       setTransfers(t);
       setRates(r);
    }, [db]);
@@ -52,14 +49,15 @@ export default function FinanceScreen() {
    const balance = useMemo(() => {
       const map = new Map<string, number>();
       for (const s of sources) map.set(s.id, s.opening_balance);
-      for (const inc of income) map.set(inc.source_id, (map.get(inc.source_id) ?? 0) + inc.amount);
-      for (const e of expenses) map.set(e.source_id, (map.get(e.source_id) ?? 0) - e.amount);
+      for (const t of transactions) {
+         map.set(t.source_id, (map.get(t.source_id) ?? 0) + t.amount);
+      }
       for (const t of transfers) {
          map.set(t.from_source_id, (map.get(t.from_source_id) ?? 0) - t.from_amount);
          map.set(t.to_source_id, (map.get(t.to_source_id) ?? 0) + t.to_amount);
       }
       return map;
-   }, [sources, income, expenses, transfers]);
+   }, [sources, transactions, transfers]);
 
    const netWorth = useMemo(() => {
       let total = 0;
@@ -169,7 +167,9 @@ export default function FinanceScreen() {
             visible={detailSource != null}
             source={detailSource}
             sources={sources}
-            income={income.filter((i) => i.source_id === detailSource?.id)}
+            income={transactions.filter(
+               (t) => t.category_id === null && t.source_id === detailSource?.id,
+            )}
             transfers={transfers.filter(
                (t) => t.from_source_id === detailSource?.id || t.to_source_id === detailSource?.id,
             )}

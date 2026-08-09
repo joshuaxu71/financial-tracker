@@ -5,11 +5,11 @@ import { ThemedView } from "@/components/themed-view";
 import { type Category, resolveCategoryColor } from "@/constants/categories";
 import { formatCurrencyAmount } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
-import { type Expense } from "@/db/expenses";
 import { type SourceRow } from "@/db/sources";
+import { type Transaction } from "@/db/transactions";
 
 type Props = {
-   expense: Expense;
+   expense: Transaction;
    categories: readonly Category[];
    sources: readonly SourceRow[];
    onDelete?: () => void;
@@ -17,13 +17,14 @@ type Props = {
 
 export function SavedExpenseRow({ expense, categories, sources, onDelete }: Props) {
    const category = categories.find((c) => c.id === expense.category_id);
-   const dotColor = resolveCategoryColor(categories, expense.category_id);
+   const dotColor = resolveCategoryColor(categories, expense.category_id ?? "");
    const source = sources.find((s) => s.id === expense.source_id);
    const currency = source?.currency ?? "JPY";
 
    function handleLongPress() {
       if (!onDelete) return;
-      const label = expense.description || formatCurrencyAmount(expense.amount, currency);
+      const amount = Math.abs(expense.amount);
+      const label = expense.description || formatCurrencyAmount(amount, currency);
       Alert.alert("Delete expense", `Delete "${label}"?`, [
          { text: "Cancel", style: "cancel" },
          { text: "Delete", style: "destructive", onPress: onDelete },
@@ -43,7 +44,7 @@ export function SavedExpenseRow({ expense, categories, sources, onDelete }: Prop
             {expense.description}
          </ThemedText>
          <ThemedText style={styles.amount}>
-            {formatCurrencyAmount(expense.amount, currency)}
+            {formatCurrencyAmount(Math.abs(expense.amount), currency)}
          </ThemedText>
       </TouchableOpacity>
    );

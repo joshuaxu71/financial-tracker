@@ -35,13 +35,13 @@ import {
    insertCategory,
    updateCategory,
 } from "@/db/categories";
-import { type Expense, getAllExpenses } from "@/db/expenses";
 import { getRates } from "@/db/rates";
 import { getAllSources } from "@/db/sources";
+import { type Transaction, getAllTransactions } from "@/db/transactions";
 import {
    type BudgetState,
    budgetStateForMonth,
-   convertExpensesToJpy,
+   convertTransactionsToJpy,
 } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
@@ -82,7 +82,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [usage, setUsage] = useState<Map<string, number>>(new Map());
-   const [expenses, setExpenses] = useState<Expense[]>([]);
+   const [transactions, setTransactions] = useState<Transaction[]>([]);
    const [movements, setMovements] = useState<BudgetMovementRow[]>([]);
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
    const [balanceEditor, setBalanceEditor] = useState<{
@@ -107,12 +107,12 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       setUsage(await getCategoryUsage(db));
       await ensureMonthlyAllocations(db, cats);
       setMovements(await getBudgetMovements(db));
-      const [rawExpenses, s, r] = await Promise.all([
-         getAllExpenses(db),
+      const [rawTransactions, s, r] = await Promise.all([
+         getAllTransactions(db),
          getAllSources(db),
          getRates(db),
       ]);
-      setExpenses(convertExpensesToJpy(rawExpenses, s, r));
+      setTransactions(convertTransactionsToJpy(rawTransactions, s, r));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
    }, [db]);
 
@@ -273,7 +273,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
    function budgetForId(id: string): BudgetState | null {
       const cat = categories.find((c) => c.id === id);
       if (cat?.budget == null) return null;
-      return budgetStateForMonth(categories, expenses, movements, id, year, month);
+      return budgetStateForMonth(categories, transactions, movements, id, year, month);
    }
 
    function renderNode(node: TreeNode) {
