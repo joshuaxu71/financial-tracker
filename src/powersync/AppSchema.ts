@@ -37,7 +37,6 @@ export const AppSchema = new Schema({
          name: column.text,
          currency: column.text,
          color: column.text,
-         opening_balance: column.real,
          sort_order: column.integer,
          created_at: column.text,
       },

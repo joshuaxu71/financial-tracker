@@ -48,7 +48,6 @@ export default function FinanceScreen() {
 
    const balance = useMemo(() => {
       const map = new Map<string, number>();
-      for (const s of sources) map.set(s.id, s.opening_balance);
       for (const t of transactions) {
          map.set(t.source_id, (map.get(t.source_id) ?? 0) + t.amount);
       }

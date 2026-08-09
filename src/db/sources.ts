@@ -7,7 +7,6 @@ export type SourceRow = {
    name: string;
    currency: string;
    color: string | null;
-   opening_balance: number;
    sort_order: number;
    created_at: string;
 };
@@ -25,20 +24,19 @@ export async function getSourceUsage(db: AbstractPowerSyncDatabase): Promise<Map
 
 export async function insertSource(
    db: AbstractPowerSyncDatabase,
-   input: { name: string; currency: string; color: string | null; opening_balance: number },
+   input: { name: string; currency: string; color: string | null },
 ): Promise<string> {
    const nextOrder = await db.getOptional<{ n: number }>(
       "SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM source",
    );
    const id = makeUuid();
    await db.execute(
-      "INSERT INTO source (id, name, currency, color, opening_balance, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO source (id, name, currency, color, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)",
       [
          id,
          input.name.trim(),
          input.currency,
          input.color,
-         input.opening_balance,
          nextOrder?.n ?? 1,
          new Date().toISOString(),
       ],
@@ -49,12 +47,7 @@ export async function insertSource(
 export async function updateSource(
    db: AbstractPowerSyncDatabase,
    id: string,
-   input: {
-      name?: string;
-      currency?: string;
-      color?: string | null;
-      opening_balance?: number;
-   },
+   input: { name?: string; currency?: string; color?: string | null },
 ): Promise<void> {
    const sets: string[] = [];
    const params: (string | number | null)[] = [];
@@ -69,10 +62,6 @@ export async function updateSource(
    if (input.color !== undefined) {
       sets.push("color = ?");
       params.push(input.color);
-   }
-   if (input.opening_balance !== undefined) {
-      sets.push("opening_balance = ?");
-      params.push(input.opening_balance);
    }
    if (sets.length === 0) return;
    params.push(id);

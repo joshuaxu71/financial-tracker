@@ -41,7 +41,6 @@ type Editor = {
    name: string;
    currency: string;
    color: string | null;
-   openingBalance: string;
 };
 
 export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
@@ -67,7 +66,6 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
          name: "",
          currency: "JPY",
          color: null,
-         openingBalance: "",
       });
    }
 
@@ -78,7 +76,6 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
          name: source.name,
          currency: source.currency,
          color: source.color,
-         openingBalance: source.opening_balance !== 0 ? String(source.opening_balance) : "",
       });
    }
 
@@ -92,26 +89,18 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
          Alert.alert("Color required", "Please pick a color for this source.");
          return;
       }
-      const balance = editor.openingBalance.trim() === "" ? 0 : parseFloat(editor.openingBalance);
-      if (isNaN(balance) || balance < 0) {
-         Alert.alert("Invalid balance", "Enter a positive number, or leave it empty for ¥0.");
-         return;
-      }
-
       try {
          if (editor.mode === "new") {
             await insertSource(db, {
                name: editor.name,
                currency: editor.currency,
                color: editor.color,
-               opening_balance: balance,
             });
          } else if (editor.id != null) {
             await updateSource(db, editor.id, {
                name: editor.name,
                currency: editor.currency,
                color: editor.color,
-               opening_balance: balance,
             });
          }
          setEditor(null);
@@ -255,21 +244,6 @@ export function SourcesModal({ visible, onDismiss, onChanged }: Props) {
                         </ThemedText>
                         <ThemedText themeColor="textSecondary">▾</ThemedText>
                      </TouchableOpacity>
-
-                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
-                        Opening balance
-                     </ThemedText>
-                     <TextInput
-                        value={editor.openingBalance}
-                        onChangeText={(v) => setEditor({ ...editor, openingBalance: v })}
-                        placeholder={`e.g. 100000 (${editor.currency})`}
-                        placeholderTextColor={theme.textSecondary}
-                        keyboardType="decimal-pad"
-                        style={[
-                           sheetStyles.input,
-                           { color: theme.text, backgroundColor: theme.backgroundSelected },
-                        ]}
-                     />
 
                      <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
                         Color
