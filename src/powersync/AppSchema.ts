@@ -3,7 +3,6 @@ import { Schema, Table, column } from "@powersync/common";
 export const AppSchema = new Schema({
    category: new Table(
       {
-         slug: column.text,
          name: column.text,
          display_order: column.integer,
          parent_id: column.text,
@@ -11,7 +10,7 @@ export const AppSchema = new Schema({
          budget: column.real,
          budget_start: column.text,
       },
-      { indexes: { slug_idx: ["slug"], parent_idx: ["parent_id"] } },
+      { indexes: { parent_idx: ["parent_id"] } },
    ),
    transaction: new Table(
       {

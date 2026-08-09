@@ -64,7 +64,11 @@ export default function TrackScreen() {
    const [isSaving, setIsSaving] = useState(false);
 
    const defaultCategoryId = useMemo(
-      () => categories.find((c) => c.slug === "food")?.id ?? categories[0]?.id ?? "",
+      () =>
+         categories.find((c) => c.name === "Food")?.id ??
+         categories.find((c) => c.parent_id != null)?.id ??
+         categories[0]?.id ??
+         "",
       [categories],
    );
    const defaultSourceId = useMemo(

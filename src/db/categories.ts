@@ -5,7 +5,6 @@ import { makeUuid } from "@/utils/id";
 
 export type CategoryRow = {
    id: string;
-   slug: string;
    name: string;
    display_order: number;
    parent_id: string | null;
@@ -23,7 +22,7 @@ export type BudgetMovementRow = {
 
 export async function getAllCategories(db: AbstractPowerSyncDatabase): Promise<CategoryRow[]> {
    return db.getAll<CategoryRow>(
-      "SELECT id, slug, name, display_order, parent_id, color, budget, budget_start FROM category ORDER BY display_order, id",
+      "SELECT id, name, display_order, parent_id, color, budget, budget_start FROM category ORDER BY display_order, id",
    );
 }
 
@@ -109,24 +108,6 @@ export async function getCategorySpendingByMonth(
    return new Map(rows.map((r) => [r.category_id, r.total]));
 }
 
-async function slugify(db: AbstractPowerSyncDatabase, name: string): Promise<string> {
-   const base = (
-      name
-         .trim()
-         .toLowerCase()
-         .replace(/[^a-z0-9]+/g, "-") || "category"
-   ).replace(/^-|-$/g, "");
-   let slug = base;
-   let i = 2;
-   while (
-      (await db.getOptional<{ id: string }>("SELECT id FROM category WHERE slug = ?", [slug])) !=
-      null
-   ) {
-      slug = `${base}-${i++}`;
-   }
-   return slug;
-}
-
 export async function insertCategory(
    db: AbstractPowerSyncDatabase,
    input: {
@@ -136,17 +117,15 @@ export async function insertCategory(
       budget: number | null;
    },
 ): Promise<string> {
-   const slug = await slugify(db, input.name);
    const nextOrder = await db.getOptional<{ n: number }>(
       "SELECT COALESCE(MAX(display_order), 0) + 1 AS n FROM category",
    );
    const budgetStart = input.budget != null ? today() : null;
    const id = makeUuid();
    await db.execute(
-      "INSERT INTO category (id, slug, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO category (id, name, display_order, parent_id, color, budget, budget_start) VALUES (?, ?, ?, ?, ?, ?, ?)",
       [
          id,
-         slug,
          input.name.trim(),
          nextOrder?.n ?? 1,
          input.parent_id,
