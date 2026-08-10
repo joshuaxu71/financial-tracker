@@ -72,24 +72,15 @@ export default function FinanceScreen() {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                <View style={styles.header}>
                   <ThemedText type="subtitle">Finance</ThemedText>
-                  <View style={styles.headerActions}>
-                     <TouchableOpacity
-                        style={[styles.iconButton, { backgroundColor: theme.backgroundElement }]}
-                        onPress={async () => setRates(await refreshRates(db))}
-                        accessibilityLabel="Refresh exchange rates"
-                     >
-                        <ThemedText type="smallBold">↻</ThemedText>
-                     </TouchableOpacity>
-                     <TouchableOpacity
-                        style={[styles.addSourceButton, { backgroundColor: theme.text }]}
-                        onPress={() => setShowSources(true)}
-                        accessibilityLabel="Add or manage sources"
-                     >
-                        <ThemedText type="smallBold" style={{ color: theme.background }}>
-                           + Add source
-                        </ThemedText>
-                     </TouchableOpacity>
-                  </View>
+                  <TouchableOpacity
+                     style={[styles.addSourceButton, { backgroundColor: theme.text }]}
+                     onPress={() => setShowSources(true)}
+                     accessibilityLabel="Add or manage sources"
+                  >
+                     <ThemedText type="smallBold" style={{ color: theme.background }}>
+                        + Add source
+                     </ThemedText>
+                  </TouchableOpacity>
                </View>
 
                <ThemedView themeColor="backgroundElement" style={styles.netWorthCard}>
@@ -198,14 +189,6 @@ const styles = StyleSheet.create({
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-   },
-   headerActions: { flexDirection: "row", alignItems: "center", gap: Spacing.two },
-   iconButton: {
-      justifyContent: "center",
-      alignItems: "center",
-      width: 32,
-      height: 32,
-      borderRadius: 16,
    },
    addSourceButton: {
       justifyContent: "center",

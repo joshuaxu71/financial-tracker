@@ -34,9 +34,17 @@ async function upsertRates(
  * Fetches fresh FX rates against the base currency and stores them.
  * Falls back to cached rates (or an empty map) when offline.
  * Stored rate = how many JPY one unit of the foreign currency is worth.
+ * Only fetches if cached rates are older than 24 hours.
  */
 export async function refreshRates(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
    try {
+      const newest = await db.getOptional<{ updated_at: string }>(
+         "SELECT updated_at FROM exchange_rate ORDER BY updated_at DESC LIMIT 1",
+      );
+      if (newest?.updated_at) {
+         const ageMs = Date.now() - new Date(newest.updated_at).getTime();
+         if (ageMs < 24 * 60 * 60 * 1000) return getRates(db);
+      }
       const res = await fetch(`https://api.frankfurter.app/latest?from=${BASE_CURRENCY}`);
       if (!res.ok) throw new Error(`rate fetch failed: ${res.status}`);
       const data = (await res.json()) as { rates?: Record<string, number> };
@@ -47,7 +55,7 @@ export async function refreshRates(db: AbstractPowerSyncDatabase): Promise<Map<s
       }
       await upsertRates(db, rates);
    } catch {
-      // offline — keep whatever we had cached
+      // offline or stale — keep whatever we had cached
    }
    return getRates(db);
 }
