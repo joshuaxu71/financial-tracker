@@ -23,6 +23,7 @@ import {
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { sheetStyles } from "@/constants/sheet-styles";
 import { BottomTabInset, Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import {
    type BudgetMovementRow,
    type CategoryRow,
@@ -41,7 +42,7 @@ import { type Transaction, getAllTransactions } from "@/db/transactions";
 import {
    type BudgetState,
    budgetStateForMonth,
-   convertTransactionsToJpy,
+   convertTransactionsToBase,
 } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
@@ -79,6 +80,7 @@ function budgetViolation(categories: readonly CategoryRow[]): string | null {
 export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: Props) {
    const db = usePowerSync();
    const theme = useTheme();
+   const { baseCurrency } = useSettings();
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [usage, setUsage] = useState<Map<string, number>>(new Map());
@@ -112,7 +114,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
          getAllSources(db),
          getRates(db),
       ]);
-      setTransactions(convertTransactionsToJpy(rawTransactions, s, r));
+      setTransactions(convertTransactionsToBase(rawTransactions, s, r, baseCurrency));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
    }, [db]);
 

@@ -12,6 +12,7 @@ import {
    resolveCategoryColor,
 } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import { useTabNavigation } from "@/context/tab-navigation";
 import {
    type BudgetMovementRow,
@@ -22,7 +23,7 @@ import {
 import { getRates } from "@/db/rates";
 import { getAllSources } from "@/db/sources";
 import { type Transaction, getAllTransactions } from "@/db/transactions";
-import { budgetStateForWindow, convertTransactionsToJpy } from "@/features/budget/budget-calc";
+import { budgetStateForWindow, convertTransactionsToBase } from "@/features/budget/budget-calc";
 import { CategoryFilter } from "@/features/journal/category-filter";
 import { MonthPickerModal } from "@/features/journal/month-picker-modal";
 import { useTheme } from "@/hooks/use-theme";
@@ -35,6 +36,7 @@ export default function DashboardScreen() {
    const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
+   const { baseCurrency } = useSettings();
    const { year: initYear, month: initMonth } = currentYearMonth();
 
    const [year, setYear] = useState(initYear);
@@ -57,7 +59,7 @@ export default function DashboardScreen() {
          getRates(db),
       ]);
       setCategories(c);
-      setTransactions(convertTransactionsToJpy(txns, s, r));
+      setTransactions(convertTransactionsToBase(txns, s, r, baseCurrency));
       setMovements(m);
       setExpanded(new Set(c.filter((cat) => cat.parent_id === null).map((cat) => cat.id)));
       setIsLoading(false);

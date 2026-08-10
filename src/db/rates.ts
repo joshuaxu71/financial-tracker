@@ -1,6 +1,5 @@
 import type { AbstractPowerSyncDatabase } from "@powersync/react-native";
 
-import { BASE_CURRENCY } from "@/constants/currencies";
 import { makeUuid } from "@/utils/id";
 
 export type RateRow = { id: string; currency: string; rate: number; updated_at: string };
@@ -33,19 +32,25 @@ async function upsertRates(
 /**
  * Fetches fresh FX rates against the base currency and stores them.
  * Falls back to cached rates (or an empty map) when offline.
- * Stored rate = how many JPY one unit of the foreign currency is worth.
- * Only fetches if cached rates are older than 24 hours.
+ * Stored rate = how many base-currency units one unit of the foreign currency is worth.
+ * Only fetches if cached rates are older than 24 hours, unless force = true.
  */
-export async function refreshRates(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
+export async function refreshRates(
+   db: AbstractPowerSyncDatabase,
+   baseCurrency: string,
+   force = false,
+): Promise<Map<string, number>> {
    try {
-      const newest = await db.getOptional<{ updated_at: string }>(
-         "SELECT updated_at FROM exchange_rate ORDER BY updated_at DESC LIMIT 1",
-      );
-      if (newest?.updated_at) {
-         const ageMs = Date.now() - new Date(newest.updated_at).getTime();
-         if (ageMs < 24 * 60 * 60 * 1000) return getRates(db);
+      if (!force) {
+         const newest = await db.getOptional<{ updated_at: string }>(
+            "SELECT updated_at FROM exchange_rate ORDER BY updated_at DESC LIMIT 1",
+         );
+         if (newest?.updated_at) {
+            const ageMs = Date.now() - new Date(newest.updated_at).getTime();
+            if (ageMs < 24 * 60 * 60 * 1000) return getRates(db);
+         }
       }
-      const res = await fetch(`https://api.frankfurter.app/latest?from=${BASE_CURRENCY}`);
+      const res = await fetch(`https://api.frankfurter.app/latest?from=${baseCurrency}`);
       if (!res.ok) throw new Error(`rate fetch failed: ${res.status}`);
       const data = (await res.json()) as { rates?: Record<string, number> };
       if (!data.rates) throw new Error("malformed rate response");
@@ -60,12 +65,13 @@ export async function refreshRates(db: AbstractPowerSyncDatabase): Promise<Map<s
    return getRates(db);
 }
 
-export function convertToJpy(
+export function convertToBase(
    amount: number,
    currency: string,
    rates: ReadonlyMap<string, number>,
+   baseCurrency: string,
 ): number {
-   if (currency === BASE_CURRENCY) return amount;
+   if (currency === baseCurrency) return amount;
    const rate = rates.get(currency);
    if (rate == null || rate <= 0) return amount;
    return amount * rate;

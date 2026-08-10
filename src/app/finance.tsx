@@ -6,8 +6,9 @@ import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { formatCurrencyAmount } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import { useTabNavigation } from "@/context/tab-navigation";
-import { convertToJpy, getRates, refreshRates } from "@/db/rates";
+import { convertToBase, getRates, refreshRates } from "@/db/rates";
 import { type SourceRow, getAllSources } from "@/db/sources";
 import { type Transaction, getAllTransactions } from "@/db/transactions";
 import { type TransferRow, getAllTransfers } from "@/db/transfers";
@@ -20,6 +21,7 @@ export default function FinanceScreen() {
    const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
+   const { baseCurrency } = useSettings();
 
    const [sources, setSources] = useState<SourceRow[]>([]);
    const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,7 +45,7 @@ export default function FinanceScreen() {
 
    useEffect(() => {
       load();
-      refreshRates(db).then(setRates);
+      refreshRates(db, baseCurrency).then(setRates);
    }, [db, load, activeIndex]);
 
    const balance = useMemo(() => {
@@ -61,7 +63,7 @@ export default function FinanceScreen() {
    const netWorth = useMemo(() => {
       let total = 0;
       for (const s of sources) {
-         total += convertToJpy(balance.get(s.id) ?? 0, s.currency, rates);
+         total += convertToBase(balance.get(s.id) ?? 0, s.currency, rates, baseCurrency);
       }
       return total;
    }, [sources, balance, rates]);
@@ -89,7 +91,7 @@ export default function FinanceScreen() {
                   </ThemedText>
                   <ThemedText type="title">{formatAmount(netWorth)}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                     all sources in {`JPY`}
+                     all sources in {baseCurrency}
                   </ThemedText>
                </ThemedView>
 
@@ -102,7 +104,7 @@ export default function FinanceScreen() {
                ) : (
                   sources.map((s) => {
                      const bal = balance.get(s.id) ?? 0;
-                     const jpy = convertToJpy(bal, s.currency, rates);
+                     const jpy = convertToBase(bal, s.currency, rates, baseCurrency);
                      return (
                         <TouchableOpacity
                            key={s.id}
@@ -126,7 +128,7 @@ export default function FinanceScreen() {
                                     <ThemedText style={styles.balance}>
                                        {formatCurrencyAmount(bal, s.currency)}
                                     </ThemedText>
-                                    {s.currency !== "JPY" && (
+                                    {s.currency !== baseCurrency && (
                                        <ThemedText type="small" themeColor="textSecondary">
                                           ≈ {formatAmount(jpy)}
                                        </ThemedText>
@@ -166,7 +168,12 @@ export default function FinanceScreen() {
             balance={detailSource ? (balance.get(detailSource.id) ?? 0) : 0}
             jpy={
                detailSource
-                  ? convertToJpy(balance.get(detailSource.id) ?? 0, detailSource.currency, rates)
+                  ? convertToBase(
+                       balance.get(detailSource.id) ?? 0,
+                       detailSource.currency,
+                       rates,
+                       baseCurrency,
+                    )
                   : 0
             }
             onDismiss={() => setDetailSource(null)}

@@ -14,9 +14,10 @@ import {
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import { useTabNavigation } from "@/context/tab-navigation";
 import { type CategoryRow, getAllCategories } from "@/db/categories";
-import { convertToJpy, getRates } from "@/db/rates";
+import { convertToBase, getRates } from "@/db/rates";
 import { type SourceRow, getAllSources } from "@/db/sources";
 import {
    type Transaction,
@@ -51,6 +52,7 @@ export default function TrackScreen() {
    const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
+   const { baseCurrency } = useSettings();
 
    const [viewYear, setViewYear] = useState(NOW_YEAR);
    const [viewMonth, setViewMonth] = useState(NOW_MONTH);
@@ -162,7 +164,12 @@ export default function TrackScreen() {
 
       const sourceCurrency = new Map(sources.map((s) => [s.id, s.currency]));
       const jpy = (e: Transaction) =>
-         convertToJpy(-e.amount, sourceCurrency.get(e.source_id) ?? "JPY", rates);
+         convertToBase(
+            -e.amount,
+            sourceCurrency.get(e.source_id) ?? baseCurrency,
+            rates,
+            baseCurrency,
+         );
 
       const daySet = new Set<string>();
       if (isCurrentMonth) daySet.add(TODAY);

@@ -1,18 +1,24 @@
 import { type BudgetMovementRow, type CategoryRow } from "@/db/categories";
-import { convertToJpy } from "@/db/rates";
+import { convertToBase } from "@/db/rates";
 import { type SourceRow } from "@/db/sources";
 import { type Transaction } from "@/db/transactions";
 import { fromMonthKey, monthKey } from "@/utils/date";
 
-export function convertTransactionsToJpy(
+export function convertTransactionsToBase(
    transactions: readonly Transaction[],
    sources: readonly SourceRow[],
    rates: ReadonlyMap<string, number>,
+   baseCurrency: string,
 ): Transaction[] {
    const currency = new Map(sources.map((s) => [s.id, s.currency]));
    return transactions.map((t) => ({
       ...t,
-      amount: convertToJpy(t.amount, currency.get(t.source_id) ?? "JPY", rates),
+      amount: convertToBase(
+         t.amount,
+         currency.get(t.source_id) ?? baseCurrency,
+         rates,
+         baseCurrency,
+      ),
    }));
 }
 

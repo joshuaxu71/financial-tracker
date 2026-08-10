@@ -50,6 +50,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { currency_idx: ["currency"] } },
    ),
+   settings: new Table({ base_currency: column.text }, {}),
    transfer: new Table(
       {
          from_source_id: column.text,
