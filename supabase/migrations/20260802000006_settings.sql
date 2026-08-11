@@ -1,12 +1,12 @@
--- User settings table. One row per user.
+-- User preferences table. One row per user.
 
-CREATE TABLE settings (
+CREATE TABLE user_preference (
   id          text PRIMARY KEY,
   base_currency text NOT NULL,
   user_id     uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE
 );
 
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_preference ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY settings_own ON settings
+CREATE POLICY user_preference_own ON user_preference
   FOR ALL USING (auth.uid () = user_id) WITH CHECK (auth.uid () = user_id);

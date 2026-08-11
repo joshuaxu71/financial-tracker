@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/themed-text";
 import { CURRENCIES } from "@/constants/currencies";
 import { Spacing } from "@/constants/theme";
 import { refreshRates } from "@/db/rates";
-import { getSettings, upsertSettings } from "@/db/settings";
+import { getUserPreference, upsertUserPreference } from "@/db/user-preference";
 import { useTheme } from "@/hooks/use-theme";
 
 type SettingsContextValue = {
@@ -76,7 +76,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
    const [isReady, setIsReady] = useState(false);
 
    useEffect(() => {
-      getSettings(db).then((s) => {
+      getUserPreference(db).then((s) => {
          setBaseCurrencyState(s.base_currency);
          setIsReady(true);
       });
@@ -84,7 +84,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
    const setBaseCurrency = useCallback(
       async (currency: string) => {
-         await upsertSettings(db, { base_currency: currency });
+         await upsertUserPreference(db, { base_currency: currency });
          setBaseCurrencyState(currency);
          await refreshRates(db, currency, true);
       },
