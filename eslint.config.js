@@ -24,6 +24,9 @@ module.exports = [
       },
    },
    {
+      ignores: ["public/**", "dist/**"],
+   },
+   {
       files: ["scripts/**/*.js"],
       languageOptions: {
          globals: {
