@@ -5,7 +5,7 @@ import {
    type PowerSyncBackendConnector,
    type PowerSyncCredentials,
    UpdateType,
-} from "@powersync/react-native";
+} from "@powersync/common";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { type SupabaseClient, type User, createClient } from "@supabase/supabase-js";
 import "react-native-url-polyfill/auto";
@@ -13,6 +13,23 @@ import "react-native-url-polyfill/auto";
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 const POWERSYNC_URL = process.env.EXPO_PUBLIC_POWERSYNC_URL!;
+
+// AsyncStorage's web implementation reads `window.localStorage`, which doesn't
+// exist during Expo Router's server-side prerender. Guard storage access so the
+// auth client never touches the DOM outside the browser.
+const isBrowser = () => typeof window !== "undefined";
+
+const authStorage = {
+   async getItem(key: string): Promise<string | null> {
+      return isBrowser() ? AsyncStorage.getItem(key) : null;
+   },
+   async setItem(key: string, value: string): Promise<void> {
+      if (isBrowser()) await AsyncStorage.setItem(key, value);
+   },
+   async removeItem(key: string): Promise<void> {
+      if (isBrowser()) await AsyncStorage.removeItem(key);
+   },
+};
 
 export type SupabaseConnectorListener = {
    initialized: () => void;
@@ -39,11 +56,12 @@ export class SupabaseConnector
       super();
       this.client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
          auth: {
-            storage: AsyncStorage,
+            storage: authStorage,
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: true,
             flowType: "pkce",
+            skipAutoInitialize: true,
          },
       });
       this.ready = false;
