@@ -1,6 +1,5 @@
 export type Category = {
    id: string;
-   slug: string;
    name: string;
    display_order: number;
    parent_id: string | null;

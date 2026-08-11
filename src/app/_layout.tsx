@@ -6,6 +6,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AnimatedSplashOverlay } from "@/components/animated-icon";
 import AppTabs from "@/components/app-tabs";
+import { SettingsProvider } from "@/context/settings-context";
 import { TabNavigationProvider } from "@/context/tab-navigation";
 import { SystemProvider } from "@/powersync/SystemProvider";
 
@@ -27,9 +28,11 @@ export default function TabLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
          <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
             <SystemProvider>
-               <TabNavigationProvider>
-                  <AppTabs />
-               </TabNavigationProvider>
+               <SettingsProvider>
+                  <TabNavigationProvider>
+                     <AppTabs />
+                  </TabNavigationProvider>
+               </SettingsProvider>
             </SystemProvider>
             <AnimatedSplashOverlay />
          </ThemeProvider>

@@ -12,17 +12,18 @@ import {
    resolveCategoryColor,
 } from "@/constants/categories";
 import { Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import { useTabNavigation } from "@/context/tab-navigation";
 import {
-   type BudgetHistoryRow,
+   type BudgetMovementRow,
    type CategoryRow,
    getAllCategories,
-   getBudgetHistory,
+   getBudgetMovements,
 } from "@/db/categories";
-import { type Expense, getAllExpenses } from "@/db/expenses";
 import { getRates } from "@/db/rates";
 import { getAllSources } from "@/db/sources";
-import { budgetStateForWindow, convertExpensesToJpy } from "@/features/budget/budget-calc";
+import { type Transaction, getAllTransactions } from "@/db/transactions";
+import { budgetStateForWindow, convertTransactionsToBase } from "@/features/budget/budget-calc";
 import { CategoryFilter } from "@/features/journal/category-filter";
 import { MonthPickerModal } from "@/features/journal/month-picker-modal";
 import { useTheme } from "@/hooks/use-theme";
@@ -35,6 +36,7 @@ export default function DashboardScreen() {
    const db = usePowerSync();
    const theme = useTheme();
    const { activeIndex } = useTabNavigation();
+   const { baseCurrency } = useSettings();
    const { year: initYear, month: initMonth } = currentYearMonth();
 
    const [year, setYear] = useState(initYear);
@@ -42,23 +44,23 @@ export default function DashboardScreen() {
    const [windowMonths, setWindowMonths] = useState<(typeof WINDOW_OPTIONS)[number]>(1);
    const [filterGroupId, setFilterGroupId] = useState<string | null>(null);
    const [categories, setCategories] = useState<CategoryRow[]>([]);
-   const [expenses, setExpenses] = useState<Expense[]>([]);
-   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
+   const [transactions, setTransactions] = useState<Transaction[]>([]);
+   const [movements, setMovements] = useState<BudgetMovementRow[]>([]);
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
    const [showMonthPicker, setShowMonthPicker] = useState(false);
    const [isLoading, setIsLoading] = useState(true);
 
    const load = useCallback(async () => {
-      const [c, e, h, s, r] = await Promise.all([
+      const [c, txns, m, s, r] = await Promise.all([
          getAllCategories(db),
-         getAllExpenses(db),
-         getBudgetHistory(db),
+         getAllTransactions(db),
+         getBudgetMovements(db),
          getAllSources(db),
          getRates(db),
       ]);
       setCategories(c);
-      setExpenses(convertExpensesToJpy(e, s, r));
-      setHistory(h);
+      setTransactions(convertTransactionsToBase(txns, s, r, baseCurrency));
+      setMovements(m);
       setExpanded(new Set(c.filter((cat) => cat.parent_id === null).map((cat) => cat.id)));
       setIsLoading(false);
    }, [db]);
@@ -80,11 +82,13 @@ export default function DashboardScreen() {
 
    const totalSpend = useMemo(() => {
       let total = 0;
-      for (const e of expenses) {
-         if (e.date >= windowStartDate && e.date <= windowEndDate) total += e.amount;
+      for (const t of transactions) {
+         if (t.category_id != null && t.date >= windowStartDate && t.date <= windowEndDate) {
+            total += -t.amount;
+         }
       }
       return total;
-   }, [expenses, windowStartDate, windowEndDate]);
+   }, [transactions, windowStartDate, windowEndDate]);
 
    const tree = useMemo(() => {
       const roots: CategoryTreeNode<CategoryRow>[] = buildCategoryTree(categories);
@@ -124,8 +128,8 @@ export default function DashboardScreen() {
    function renderNode(node: CategoryTreeNode<CategoryRow>, depth: number) {
       const state = budgetStateForWindow(
          categories,
-         expenses,
-         history,
+         transactions,
+         movements,
          node.category.id,
          year,
          month,

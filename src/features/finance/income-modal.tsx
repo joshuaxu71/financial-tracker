@@ -6,7 +6,8 @@ import { Overlay } from "@/components/overlay";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import { sheetStyles } from "@/constants/sheet-styles";
-import { type SourceRow, insertIncome } from "@/db/sources";
+import { type SourceRow } from "@/db/sources";
+import { insertTransactions } from "@/db/transactions";
 import { useTheme } from "@/hooks/use-theme";
 import { today } from "@/utils/date";
 
@@ -43,7 +44,9 @@ export function IncomeModal({ visible, source, onDismiss, onChanged }: Props) {
          return;
       }
       try {
-         await insertIncome(db, { source_id: active.id, amount: n, date });
+         await insertTransactions(db, [
+            { source_id: active.id, amount: n, date, category_id: null, description: "" },
+         ]);
          close();
          onChanged();
       } catch {

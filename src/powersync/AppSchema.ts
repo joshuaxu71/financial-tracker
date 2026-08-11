@@ -1,9 +1,8 @@
 import { Schema, Table, column } from "@powersync/common";
 
 export const AppSchema = new Schema({
-   categories: new Table(
+   category: new Table(
       {
-         slug: column.text,
          name: column.text,
          display_order: column.integer,
          parent_id: column.text,
@@ -11,65 +10,39 @@ export const AppSchema = new Schema({
          budget: column.real,
          budget_start: column.text,
       },
-      { indexes: { slug_idx: ["slug"], parent_idx: ["parent_id"] } },
+      { indexes: { parent_idx: ["parent_id"] } },
    ),
-   expenses: new Table(
+   transaction: new Table(
       {
          date: column.text,
-         category_id: column.text,
          source_id: column.text,
          amount: column.real,
+         category_id: column.text,
          description: column.text,
-         created_at: column.text,
          sort_order: column.real,
+         created_at: column.text,
       },
       { indexes: { date_idx: ["date"], category_idx: ["category_id"], source_idx: ["source_id"] } },
    ),
-   budgets: new Table(
+   budget_movement: new Table(
       {
-         name: column.text,
+         category_id: column.text,
+         date: column.text,
          amount: column.real,
-         period: column.text,
-         created_at: column.text,
       },
-      { indexes: { created_idx: ["created_at"] } },
+      { indexes: { category_idx: ["category_id"], date_idx: ["date"] } },
    ),
-   budget_categories: new Table(
-      {
-         budget_id: column.text,
-         category_id: column.text,
-      },
-      { indexes: { budget_idx: ["budget_id"], category_idx: ["category_id"] } },
-   ),
-   budget_history: new Table(
-      {
-         category_id: column.text,
-         month: column.text,
-         allocation: column.real,
-      },
-      { indexes: { month_idx: ["month"], category_idx: ["category_id"] } },
-   ),
-   sources: new Table(
+   source: new Table(
       {
          name: column.text,
          currency: column.text,
          color: column.text,
-         opening_balance: column.real,
          sort_order: column.integer,
          created_at: column.text,
       },
       { indexes: { sort_idx: ["sort_order"] } },
    ),
-   income_entries: new Table(
-      {
-         source_id: column.text,
-         amount: column.real,
-         date: column.text,
-         created_at: column.text,
-      },
-      { indexes: { date_idx: ["date"], source_idx: ["source_id"] } },
-   ),
-   exchange_rates: new Table(
+   exchange_rate: new Table(
       {
          currency: column.text,
          rate: column.real,
@@ -77,7 +50,8 @@ export const AppSchema = new Schema({
       },
       { indexes: { currency_idx: ["currency"] } },
    ),
-   transfers: new Table(
+   user_preference: new Table({ base_currency: column.text }, {}),
+   transfer: new Table(
       {
          from_source_id: column.text,
          to_source_id: column.text,

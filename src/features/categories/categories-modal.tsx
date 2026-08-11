@@ -23,27 +23,30 @@ import {
 import { CATEGORY_COLORS } from "@/constants/category-colors";
 import { sheetStyles } from "@/constants/sheet-styles";
 import { BottomTabInset, Spacing } from "@/constants/theme";
+import { useSettings } from "@/context/settings-context";
 import {
-   type BudgetHistoryRow,
+   type BudgetMovementRow,
    type CategoryRow,
+   addBudgetMovement,
    deleteCategory,
+   ensureMonthlyAllocations,
    getAllCategories,
-   getBudgetHistory,
+   getBudgetMovements,
    getCategoryUsage,
    insertCategory,
-   resetBudgetAccumulation,
    updateCategory,
 } from "@/db/categories";
-import { type Expense, getAllExpenses } from "@/db/expenses";
 import { getRates } from "@/db/rates";
 import { getAllSources } from "@/db/sources";
+import { type Transaction, getAllTransactions } from "@/db/transactions";
 import {
    type BudgetState,
    budgetStateForMonth,
-   convertExpensesToJpy,
+   convertTransactionsToBase,
 } from "@/features/budget/budget-calc";
 import { useTheme } from "@/hooks/use-theme";
 import { formatAmount } from "@/utils/currency";
+import { today } from "@/utils/date";
 
 type Props = {
    visible: boolean;
@@ -77,12 +80,18 @@ function budgetViolation(categories: readonly CategoryRow[]): string | null {
 export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: Props) {
    const db = usePowerSync();
    const theme = useTheme();
+   const { baseCurrency } = useSettings();
 
    const [categories, setCategories] = useState<CategoryRow[]>([]);
    const [usage, setUsage] = useState<Map<string, number>>(new Map());
-   const [expenses, setExpenses] = useState<Expense[]>([]);
-   const [history, setHistory] = useState<BudgetHistoryRow[]>([]);
+   const [transactions, setTransactions] = useState<Transaction[]>([]);
+   const [movements, setMovements] = useState<BudgetMovementRow[]>([]);
    const [expanded, setExpanded] = useState<Set<string>>(new Set());
+   const [balanceEditor, setBalanceEditor] = useState<{
+      categoryId: string;
+      value: string;
+      currentAvailable: number;
+   } | null>(null);
    const [editor, setEditor] = useState<{
       mode: "new" | "edit";
       id: string | null;
@@ -98,13 +107,14 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const cats = await getAllCategories(db);
       setCategories(cats);
       setUsage(await getCategoryUsage(db));
-      setHistory(await getBudgetHistory(db));
-      const [rawExpenses, s, r] = await Promise.all([
-         getAllExpenses(db),
+      await ensureMonthlyAllocations(db, cats);
+      setMovements(await getBudgetMovements(db));
+      const [rawTransactions, s, r] = await Promise.all([
+         getAllTransactions(db),
          getAllSources(db),
          getRates(db),
       ]);
-      setExpenses(convertExpensesToJpy(rawExpenses, s, r));
+      setTransactions(convertTransactionsToBase(rawTransactions, s, r, baseCurrency));
       setExpanded(new Set(cats.filter((c) => c.parent_id === null).map((c) => c.id)));
    }, [db]);
 
@@ -240,24 +250,15 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       onChanged();
    }
 
-   function confirmResetBudget() {
+   function openSetBalance() {
       if (!editor || editor.id == null) return;
-      Alert.alert(
-         "Reset budget accumulation",
-         `Discard carried-over budget for "${editor.name}" and start fresh from this month?`,
-         [
-            { text: "Cancel", style: "cancel" },
-            {
-               text: "Reset",
-               style: "destructive",
-               onPress: async () => {
-                  await resetBudgetAccumulation(db, editor.id!);
-                  await load();
-                  onChanged();
-               },
-            },
-         ],
-      );
+      const budget = budgetForId(editor.id);
+      const currentAvailable = Math.round(budget?.available ?? 0);
+      setBalanceEditor({
+         categoryId: editor.id,
+         value: String(currentAvailable),
+         currentAvailable,
+      });
    }
 
    const reassignTargets = useMemo(() => {
@@ -271,9 +272,10 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       ? (categories.find((c) => c.id === editor.parentId)?.name ?? "None (top level)")
       : "";
 
-   function nodeBudget(node: TreeNode): BudgetState | null {
-      if (node.category.budget == null) return null;
-      return budgetStateForMonth(categories, expenses, history, node.category.id, year, month);
+   function budgetForId(id: string): BudgetState | null {
+      const cat = categories.find((c) => c.id === id);
+      if (cat?.budget == null) return null;
+      return budgetStateForMonth(categories, transactions, movements, id, year, month);
    }
 
    function renderNode(node: TreeNode) {
@@ -282,7 +284,7 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
       const dotColor = resolveCategoryColor(categories, node.category.id);
       const count = usage.get(node.category.id) ?? 0;
       const isTopLevel = node.category.parent_id === null;
-      const budget = nodeBudget(node);
+      const budget = budgetForId(node.category.id);
       const spent = budget?.spent ?? 0;
       const available = budget?.available ?? 0;
       const pct = available > 0 ? Math.min((spent / available) * 100, 100) : 0;
@@ -474,11 +476,11 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                         editor.id != null &&
                         categories.find((c) => c.id === editor.id)?.budget != null && (
                            <TouchableOpacity
-                              onPress={confirmResetBudget}
-                              style={styles.resetButton}
+                              onPress={openSetBalance}
+                              style={styles.setBalanceButton}
                            >
-                              <ThemedText type="small" style={styles.resetText}>
-                                 Reset accumulation
+                              <ThemedText type="small" style={styles.setBalanceText}>
+                                 Set balance
                               </ThemedText>
                            </TouchableOpacity>
                         )}
@@ -559,6 +561,58 @@ export function CategoriesModal({ visible, year, month, onDismiss, onChanged }: 
                               </TouchableOpacity>
                            );
                         })}
+                  </ThemedView>
+               </Overlay>
+            )}
+
+            {balanceEditor && (
+               <Overlay visible onRequestClose={() => setBalanceEditor(null)}>
+                  <ThemedView themeColor="backgroundElement" style={sheetStyles.sheet}>
+                     <ThemedText type="smallBold" style={sheetStyles.title}>
+                        Set balance
+                     </ThemedText>
+                     <ThemedText themeColor="textSecondary" style={sheetStyles.label}>
+                        Available balance as of today
+                     </ThemedText>
+                     <TextInput
+                        value={balanceEditor.value}
+                        onChangeText={(v) => setBalanceEditor({ ...balanceEditor, value: v })}
+                        keyboardType="decimal-pad"
+                        autoFocus
+                        style={[
+                           sheetStyles.input,
+                           { color: theme.text, backgroundColor: theme.backgroundSelected },
+                        ]}
+                     />
+                     <View style={sheetStyles.actions}>
+                        <TouchableOpacity
+                           onPress={() => setBalanceEditor(null)}
+                           style={sheetStyles.deleteButton}
+                        >
+                           <ThemedText type="smallBold" style={sheetStyles.deleteText}>
+                              Cancel
+                           </ThemedText>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                           onPress={async () => {
+                              const newBalance = parseFloat(balanceEditor.value);
+                              if (isNaN(newBalance) || newBalance < 0) {
+                                 Alert.alert("Invalid balance", "Enter a non-negative number.");
+                                 return;
+                              }
+                              const delta = newBalance - balanceEditor.currentAvailable;
+                              await addBudgetMovement(db, balanceEditor.categoryId, today(), delta);
+                              setBalanceEditor(null);
+                              await load();
+                              onChanged();
+                           }}
+                           style={[sheetStyles.saveButton, { backgroundColor: theme.text }]}
+                        >
+                           <ThemedText type="smallBold" style={{ color: theme.background }}>
+                              Set
+                           </ThemedText>
+                        </TouchableOpacity>
+                     </View>
                   </ThemedView>
                </Overlay>
             )}
@@ -658,11 +712,11 @@ const styles = StyleSheet.create({
       marginBottom: Spacing.one,
       fontSize: 11,
    },
-   resetButton: {
+   setBalanceButton: {
       alignSelf: "flex-start",
       paddingVertical: Spacing.two,
    },
-   resetText: { color: "#FF453A" },
+   setBalanceText: { color: "#0A84FF" },
 
    inheritChip: {
       justifyContent: "center",
