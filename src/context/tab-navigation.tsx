@@ -7,7 +7,8 @@ import {
    useRef,
    useState,
 } from "react";
-import PagerView from "react-native-pager-view";
+
+import type { PagerHandle } from "@/components/pager-view.types";
 
 export const TRACK_INDEX = 0;
 export const DASHBOARD_INDEX = 1;
@@ -19,7 +20,7 @@ type TabNavigationContextType = {
    refreshKey: number;
    refresh: () => void;
    goToTab: (index: number) => void;
-   pagerRef: React.RefObject<PagerView | null>;
+   pagerRef: React.RefObject<PagerHandle | null>;
 };
 
 const TabNavigationContext = createContext<TabNavigationContextType | undefined>(undefined);
@@ -27,7 +28,7 @@ const TabNavigationContext = createContext<TabNavigationContextType | undefined>
 export function TabNavigationProvider({ children }: { children: ReactNode }) {
    const [activeIndex, setActiveIndex] = useState(HOME_INDEX);
    const [refreshKey, setRefreshKey] = useState(0);
-   const pagerRef = useRef<PagerView | null>(null);
+   const pagerRef = useRef<PagerHandle | null>(null);
 
    const refresh = useCallback(() => {
       setRefreshKey((k) => k + 1);

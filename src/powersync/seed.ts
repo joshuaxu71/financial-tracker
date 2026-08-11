@@ -70,31 +70,30 @@ const SEED = {
  * idempotently on first launch. No-op once any category exists.
  */
 export async function seedDefaults(db: AbstractPowerSyncDatabase): Promise<void> {
-   const count = await db.getOptional<{ n: number }>("SELECT COUNT(*) AS n FROM categories");
+   const count = await db.getOptional<{ n: number }>("SELECT COUNT(*) AS n FROM category");
    if ((count?.n ?? 0) > 0) return;
 
    const now = new Date().toISOString();
    await db.writeTransaction(async (tx: Transaction) => {
       for (const g of SEED.groups) {
          await tx.execute(
-            "INSERT INTO categories (id, name, display_order, parent_id, color) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO category (id, name, display_order, parent_id, color) VALUES (?, ?, ?, ?, ?)",
             [g.id, g.name, g.order, null, g.color],
          );
       }
       for (const l of SEED.leaves) {
          await tx.execute(
-            "INSERT INTO categories (id, name, display_order, parent_id) VALUES (?, ?, ?, ?)",
+            "INSERT INTO category (id, name, display_order, parent_id) VALUES (?, ?, ?, ?)",
             [l.id, l.name, l.order, l.parent],
          );
       }
       await tx.execute(
-         "INSERT INTO sources (id, name, currency, color, opening_balance, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+         "INSERT INTO source (id, name, currency, color, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)",
          [
             SEED.source.id,
             SEED.source.name,
             SEED.source.currency,
             SEED.source.color,
-            0,
             SEED.source.order,
             now,
          ],

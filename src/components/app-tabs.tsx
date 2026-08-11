@@ -1,11 +1,11 @@
 import { ChartPie, Landmark, NotebookPen } from "lucide-react-native";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
-import PagerView from "react-native-pager-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import FinanceScreen from "@/app/finance";
 import HistoryScreen from "@/app/history";
 import TrackScreen from "@/app/index";
+import PagerView from "@/components/pager-view";
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
 import {
