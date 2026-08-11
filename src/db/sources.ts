@@ -17,7 +17,7 @@ export async function getAllSources(db: AbstractPowerSyncDatabase): Promise<Sour
 
 export async function getSourceUsage(db: AbstractPowerSyncDatabase): Promise<Map<string, number>> {
    const rows = await db.getAll<{ source_id: string; count: number }>(
-      "SELECT source_id, COUNT(*) AS count FROM transaction WHERE category_id IS NOT NULL GROUP BY source_id",
+      "SELECT source_id, COUNT(*) AS count FROM txn WHERE category_id IS NOT NULL GROUP BY source_id",
    );
    return new Map(rows.map((r) => [r.source_id, r.count]));
 }
@@ -76,11 +76,11 @@ export async function deleteSource(
    await db.writeTransaction(async (tx: DbTx) => {
       if (reassignToId != null) {
          await tx.execute(
-            "UPDATE transaction SET source_id = ? WHERE source_id = ? AND category_id IS NOT NULL",
+            "UPDATE txn SET source_id = ? WHERE source_id = ? AND category_id IS NOT NULL",
             [reassignToId, id],
          );
       }
-      await tx.execute("DELETE FROM transaction WHERE source_id = ? AND category_id IS NULL", [id]);
+      await tx.execute("DELETE FROM txn WHERE source_id = ? AND category_id IS NULL", [id]);
       await tx.execute("DELETE FROM transfer WHERE from_source_id = ? OR to_source_id = ?", [
          id,
          id,

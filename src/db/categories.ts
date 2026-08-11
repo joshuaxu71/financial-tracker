@@ -88,7 +88,7 @@ export async function getCategoryUsage(
    db: AbstractPowerSyncDatabase,
 ): Promise<Map<string, number>> {
    const rows = await db.getAll<{ category_id: string; count: number }>(
-      "SELECT category_id, COUNT(*) AS count FROM transaction WHERE category_id IS NOT NULL GROUP BY category_id",
+      "SELECT category_id, COUNT(*) AS count FROM txn WHERE category_id IS NOT NULL GROUP BY category_id",
    );
    return new Map(rows.map((r) => [r.category_id, r.count]));
 }
@@ -102,7 +102,7 @@ export async function getCategorySpendingByMonth(
    const from = `${year}-${mm}-01`;
    const to = `${year}-${mm}-31`;
    const rows = await db.getAll<{ category_id: string; total: number }>(
-      "SELECT category_id, SUM(-amount) AS total FROM transaction WHERE category_id IS NOT NULL AND date >= ? AND date <= ? GROUP BY category_id",
+      "SELECT category_id, SUM(-amount) AS total FROM txn WHERE category_id IS NOT NULL AND date >= ? AND date <= ? GROUP BY category_id",
       [from, to],
    );
    return new Map(rows.map((r) => [r.category_id, r.total]));
@@ -195,7 +195,7 @@ export async function deleteCategory(
 ): Promise<void> {
    await db.writeTransaction(async (tx: Transaction) => {
       if (reassignToId != null) {
-         await tx.execute("UPDATE transaction SET category_id = ? WHERE category_id = ?", [
+         await tx.execute("UPDATE txn SET category_id = ? WHERE category_id = ?", [
             reassignToId,
             id,
          ]);

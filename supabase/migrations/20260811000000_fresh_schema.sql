@@ -1,6 +1,8 @@
 -- Fresh consolidated schema for a reset Supabase project.
 -- Run this once in the Supabase SQL editor after resetting the database.
 -- Final state of all 7 synced tables, matching src/powersync/AppSchema.ts.
+-- Note: the transaction table is named `txn` because `transaction` is a
+-- reserved keyword in SQLite (PowerSync's local database).
 
 -- ---------------------------------------------------------------- category
 CREATE TABLE category (
@@ -40,8 +42,8 @@ ALTER TABLE source ENABLE ROW LEVEL SECURITY;
 CREATE POLICY source_own ON source
   FOR ALL USING (auth.uid () = user_id) WITH CHECK (auth.uid () = user_id);
 
--- ---------------------------------------------------------------- transaction
-CREATE TABLE transaction (
+-- ---------------------------------------------------------------- txn
+CREATE TABLE txn (
   id          text PRIMARY KEY,
   date        text NOT NULL,
   source_id   uuid NOT NULL REFERENCES source (id) ON DELETE RESTRICT,
@@ -53,14 +55,14 @@ CREATE TABLE transaction (
   user_id     uuid NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE
 );
 
-CREATE INDEX transaction_user_id_idx ON transaction (user_id);
-CREATE INDEX transaction_date_idx ON transaction (date);
-CREATE INDEX transaction_source_id_idx ON transaction (source_id);
-CREATE INDEX transaction_category_id_idx ON transaction (category_id);
+CREATE INDEX txn_user_id_idx ON txn (user_id);
+CREATE INDEX txn_date_idx ON txn (date);
+CREATE INDEX txn_source_id_idx ON txn (source_id);
+CREATE INDEX txn_category_id_idx ON txn (category_id);
 
-ALTER TABLE transaction ENABLE ROW LEVEL SECURITY;
+ALTER TABLE txn ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY transaction_own ON transaction
+CREATE POLICY txn_own ON txn
   FOR ALL USING (auth.uid () = user_id) WITH CHECK (auth.uid () = user_id);
 
 -- ---------------------------------------------------------------- budget_movement

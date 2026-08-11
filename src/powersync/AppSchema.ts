@@ -12,7 +12,7 @@ export const AppSchema = new Schema({
       },
       { indexes: { parent_idx: ["parent_id"] } },
    ),
-   transaction: new Table(
+   txn: new Table(
       {
          date: column.text,
          source_id: column.text,
