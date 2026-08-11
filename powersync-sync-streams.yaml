@@ -1,0 +1,23 @@
+# PowerSync Sync Streams (edition 3) — paste into PowerSync Dashboard → Sync → Sync Streams
+#
+# Every table is scoped to the signed-in user via auth.user_id(), which matches
+# the RLS policies in supabase/migrations/20260802000000_init.sql and the
+# user_id column stamped by SupabaseConnector.uploadData on PUT.
+#
+# `auth.user_id()` works because the PowerSync instance has "Use Supabase Auth"
+# enabled (Client Auth), so tokens are Supabase access tokens for the
+# authenticated audience.
+
+streams:
+  user_data:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM categories WHERE user_id = auth.user_id()
+      - SELECT * FROM expenses WHERE user_id = auth.user_id()
+      - SELECT * FROM budgets WHERE user_id = auth.user_id()
+      - SELECT * FROM budget_categories WHERE user_id = auth.user_id()
+      - SELECT * FROM budget_history WHERE user_id = auth.user_id()
+      - SELECT * FROM sources WHERE user_id = auth.user_id()
+      - SELECT * FROM income_entries WHERE user_id = auth.user_id()
+      - SELECT * FROM exchange_rates WHERE user_id = auth.user_id()
+      - SELECT * FROM transfers WHERE user_id = auth.user_id()

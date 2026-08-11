@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Finance Tracker — Design Direction</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+<style>
+  :root { color-scheme: dark; }
+  html, body { background: #0a0a0b; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
+
+  .app-bg { background: #000; }
+  .app-card { background: #212225; border-radius: 16px; }
+  .app-sel { background: #2E3135; }
+  .app-sec { color: #B0B4BA; }
+  .app-text { color: #fff; }
+  .dot { width: 10px; height: 10px; border-radius: 99px; display: inline-block; }
+
+  .phone {
+    width: 300px; background: #000; border-radius: 36px;
+    border: 1px solid #2E3135; padding: 14px 10px 10px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .notch { width: 90px; height: 22px; background: #111; border-radius: 99px; margin: 0 auto 10px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+
+  .chip { padding: 5px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .chip-on { background: #fff; color: #000; }
+  .chip-off { background: #212225; color: #B0B4BA; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+  .opt-title { font-size: 18px; font-weight: 700; }
+  .tag { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; }
+  .tag-rec { background: #1E3A2F; color: #4ADE80; }
+  .tag-heavy { background: #3A241E; color: #FB923C; }
+  .tag-light { background: #232A3A; color: #7EB3FF; }
+</style>
+</head>
+<body>
+
+<div class="max-w-6xl mx-auto px-5 py-10">
+  <!-- Header -->
+  <div class="mb-10">
+    <div class="text-sm app-sec mb-2">Financial · Design Review</div>
+    <h1 class="text-3xl font-bold text-white mb-2">Finance Tracker — Sources, Currencies &amp; Net Worth</h1>
+    <p class="text-white/70 max-w-3xl">
+      You asked to add multiple sources (banks/accounts) with varying currencies. The key design question is
+      how sources relate to the expenses you already track. Three directions below — annotate or pick one.
+    </p>
+  </div>
+
+  <!-- ================= OPTION A ================= -->
+  <div class="grid2 mb-16">
+    <div>
+      <div class="flex items-center gap-3 mb-3 flex-wrap">
+        <span class="opt-title text-white">A · Linked ledger</span>
+        <span class="tag tag-rec">Recommended</span>
+      </div>
+      <p class="text-white/80 mb-3">
+        Every expense is attributed to a source. Each source has a name + currency. Balances are
+        derived (opening balance + expenses). One coherent money picture.
+      </p>
+      <div class="app-card p-4 text-sm mb-2">
+        <div class="text-white/60 mb-2">How it works</div>
+        <ul class="space-y-2 text-white/80">
+          <li>• <b>Track</b>: each day sheet gets a source row selector (bank chip)</li>
+          <li>• <b>Dashboard</b>: spend per source + net worth card across sources</li>
+          <li>• <b>Finance tab</b>: source cards with balance, currency, conversion to base</li>
+          <li>• <b>Model</b>: <code>sources(id, name, currency, sort_order)</code> + <code>expenses.source_id</code></li>
+        </ul>
+      </div>
+      <div class="app-card p-3 text-xs text-white/70">
+        <b class="text-white">Trade-offs</b> · Expenses need a source (migrate existing rows to a default "Cash" source). Balances stay accurate automatically.
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <!-- Finance tab -->
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="text-sm text-white font-semibold">Net worth</div>
+            <div class="text-xs app-sec">JPY</div>
+          </div>
+          <div class="text-2xl font-bold text-white mt-1">¥1,284,500</div>
+          <div class="text-xs app-sec">+¥18,200 this month</div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#4A90D9"></span><span class="text-white text-sm font-medium">SMBC Checking</span></div>
+            <div class="text-white text-sm font-semibold">¥862,300</div>
+          </div>
+          <div class="row justify-between mt-1 pl-[18px]"><span class="text-xs app-sec">JPY · +¥6,400</span><span class="text-xs app-sec">62%</span></div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#FF6FA5"></span><span class="text-white text-sm font-medium">Wise EUR</span></div>
+            <div class="text-white text-sm font-semibold">€2,450</div>
+          </div>
+          <div class="row justify-between mt-1 pl-[18px]"><span class="text-xs app-sec">EUR · ≈ ¥380,200</span><span class="text-xs app-sec">rate ¥155</span></div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#6BCB77"></span><span class="text-white text-sm font-medium">Chase USD</span></div>
+            <div class="text-white text-sm font-semibold">$1,120</div>
+          </div>
+          <div class="row justify-between mt-1 pl-[18px]"><span class="text-xs app-sec">USD · ≈ ¥42,000</span><span class="text-xs app-sec">rate ¥149</span></div>
+        </div>
+        <div class="app-card p-3 border border-dashed" style="border-color:#2E3135; background:none">
+          <div class="text-center text-sm text-white/60">+ Add source</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= OPTION B ================= -->
+  <div class="grid2 mb-16">
+    <div>
+      <div class="flex items-center gap-3 mb-3 flex-wrap">
+        <span class="opt-title text-white">B · Balance tracker</span>
+        <span class="tag tag-light">Light coupling</span>
+      </div>
+      <p class="text-white/80 mb-3">
+        Sources are a standalone ledger of balances (opening balance + manual income/expense adjustments).
+        The expense tracker stays untouched. Simplest, but two separate money pictures.
+      </p>
+      <div class="app-card p-4 text-sm mb-2">
+        <div class="text-white/60 mb-2">How it works</div>
+        <ul class="space-y-2 text-white/80">
+          <li>• <b>Finance tab</b>: add source with currency + starting balance</li>
+          <li>• <b>Adjust</b>: "balance +X" / "balance −X" entries per source</li>
+          <li>• <b>Net worth</b>: sum of converted balances</li>
+          <li>• <b>Model</b>: <code>sources(id, name, currency)</code> + <code>source_entries(id, source_id, amount)</code></li>
+        </ul>
+      </div>
+      <div class="app-card p-3 text-xs text-white/70">
+        <b class="text-white">Trade-offs</b> · No link to your category spend — you'd maintain balances by hand. Net worth only as accurate as your manual updates.
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#4A90D9"></span><span class="text-white text-sm font-medium">SMBC Checking</span></div>
+            <div class="text-white text-sm font-semibold">¥862,300</div>
+          </div>
+          <div class="mt-2"><div class="chip chip-on">+ Add money</div></div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#FF6FA5"></span><span class="text-white text-sm font-medium">Wise EUR</span></div>
+            <div class="text-white text-sm font-semibold">€2,450</div>
+          </div>
+          <div class="mt-2"><div class="chip chip-on">+ Add money</div></div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#6BCB77"></span><span class="text-white text-sm font-medium">Chase USD</span></div>
+            <div class="text-white text-sm font-semibold">$1,120</div>
+          </div>
+          <div class="mt-2"><div class="chip chip-on">+ Add money</div></div>
+        </div>
+        <div class="app-card p-3 border border-dashed" style="border-color:#2E3135; background:none">
+          <div class="text-center text-sm text-white/60">+ Add source</div>
+        </div>
+        <div class="app-card p-3 mt-2">
+          <div class="row justify-between">
+            <div class="text-sm text-white font-semibold">Net worth</div>
+            <div class="text-xs app-sec">≈ ¥1,284,500</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= OPTION C ================= -->
+  <div class="grid2 mb-16">
+    <div>
+      <div class="flex items-center gap-3 mb-3 flex-wrap">
+        <span class="opt-title text-white">C · Full accounting</span>
+        <span class="tag tag-heavy">Heavy</span>
+      </div>
+      <p class="text-white/80 mb-3">
+        Sources, expenses, income, and transfers all in one double-entry-ish model. Balances always exact,
+        transfers move money between sources, currencies convert at record time.
+      </p>
+      <div class="app-card p-4 text-sm mb-2">
+        <div class="text-white/60 mb-2">How it works</div>
+        <ul class="space-y-2 text-white/80">
+          <li>• <b>Transfers</b>: move money source→source (e.g. Wise → SMBC)</li>
+          <li>• <b>Income</b>: salary/deposits as negative expenses</li>
+          <li>• <b>Model</b>: expenses become transactions with <code>source_id</code>, <code>kind</code> (expense/income/transfer)</li>
+        </ul>
+      </div>
+      <div class="app-card p-3 text-xs text-white/70">
+        <b class="text-white">Trade-offs</b> · Most powerful but a big redesign of Track, Dashboard, and Budget screens. Highest effort, more room for bugs.
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#4A90D9"></span><span class="text-white text-sm font-medium">SMBC Checking</span></div>
+            <div class="text-white text-sm font-semibold">¥862,300</div>
+          </div>
+          <div class="text-xs app-sec mt-1 pl-[18px]">↓ ¥50,000 from Wise · 2 days ago</div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="row justify-between">
+            <div class="row"><span class="dot" style="background:#FF6FA5"></span><span class="text-white text-sm font-medium">Wise EUR</span></div>
+            <div class="text-white text-sm font-semibold">€2,450</div>
+          </div>
+          <div class="text-xs app-sec mt-1 pl-[18px]">↑ ¥50,000 to SMBC · 2 days ago</div>
+        </div>
+        <div class="app-card p-3 mb-2">
+          <div class="text-sm text-white mb-1">New transaction</div>
+          <div class="row gap-2 mb-2">
+            <div class="chip chip-on">Expense</div><div class="chip chip-off">Income</div><div class="chip chip-off">Transfer</div>
+          </div>
+          <div class="app-sel rounded-lg p-2 text-sm text-white mb-2">SMBC Checking · ¥0</div>
+          <div class="app-sel rounded-lg p-2 text-sm text-white">Wise EUR · €0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LOCKED ================= -->
+  <div class="app-card p-6 mb-16">
+    <h2 class="text-xl font-bold text-white mb-1">Locked decisions</h2>
+    <div class="grid2 mt-4 gap-3">
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">DIRECTION</div>
+        <div class="text-white font-semibold">A · Linked ledger</div>
+        <div class="text-sm app-sec mt-1">Expenses attributed to sources; balances derived; net worth auto</div>
+      </div>
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">CURRENCY</div>
+        <div class="text-white font-semibold">JPY base + auto rates</div>
+        <div class="text-sm app-sec mt-1">Live rates fetched; net worth converted to JPY</div>
+      </div>
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">PLACEMENT</div>
+        <div class="text-white font-semibold">New Finance tab</div>
+        <div class="text-sm app-sec mt-1">Track / Dashboard / Budget / Finance</div>
+      </div>
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">INCOME</div>
+        <div class="text-white font-semibold">Opening balance + income</div>
+        <div class="text-sm app-sec mt-1">Each source has a starting balance; "+ add money" entries top it up</div>
+      </div>
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">SOURCE SCOPE</div>
+        <div class="text-white font-semibold">Per-row, defaults to last used</div>
+        <div class="text-sm app-sec mt-1">Each expense row has its own source, defaulting to the previous row's source</div>
+      </div>
+      <div class="app-sel rounded-xl p-4">
+        <div class="text-xs app-sec mb-1">NET WORTH</div>
+        <div class="text-white font-semibold">¥ total + per-source own currency</div>
+        <div class="text-sm app-sec mt-1">Header shows JPY net worth; each card shows its currency with ≈ JPY subtext</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= DECISIONS ================= -->
+  <div class="app-card p-6 mb-16">
+    <h2 class="text-xl font-bold text-white mb-1">Decisions to lock</h2>
+    <p class="text-sm app-sec mb-6">Each form queues one answer. Pick an option, then submit.</p>
+
+    <div class="mb-8">
+      <div class="text-white font-semibold mb-3">1. Direction</div>
+      <form data-lavish-question="direction" class="space-y-2"
+        onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('direction'); if (c) window.lavish.queuePrompt('Finance tracker direction: ' + c, { tag: 'choice', text: 'Direction: ' + c, data: { question: 'direction', answer: c } });">
+        <label class="flex items-start gap-3 p-3 rounded-xl app-sel cursor-pointer">
+          <input type="radio" name="direction" value="A - Linked ledger" class="mt-1" />
+          <span class="text-white text-sm"><b>A · Linked ledger</b> — expenses attributed to sources; balances derived; net worth auto</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="direction" value="B - Balance tracker" class="mt-1" />
+          <span class="text-white text-sm"><b>B · Balance tracker</b> — standalone balances, expense tracker untouched</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="direction" value="C - Full accounting" class="mt-1" />
+          <span class="text-white text-sm"><b>C · Full accounting</b> — transactions with transfers + income</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Queue direction</button>
+      </form>
+    </div>
+
+    <div class="mb-8">
+      <div class="text-white font-semibold mb-3">2. Base currency &amp; conversion</div>
+      <form data-lavish-question="currency" class="space-y-2"
+        onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('currency'); if (c) window.lavish.queuePrompt('Currency model: ' + c, { tag: 'choice', text: 'Currency: ' + c, data: { question: 'currency', answer: c } });">
+        <label class="flex items-start gap-3 p-3 rounded-xl app-sel cursor-pointer">
+          <input type="radio" name="currency" value="JPY base + fixed manual rates" class="mt-1" />
+          <span class="text-white text-sm"><b>JPY base + manual rates</b> — you set one rate per currency (e.g. EUR ¥155); used for net worth only. Recommended.</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="currency" value="JPY base + auto-fetched rates" class="mt-1" />
+          <span class="text-white text-sm"><b>JPY base + auto rates</b> — fetch live rates (needs network; more moving parts)</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="currency" value="No conversion - show each in own currency" class="mt-1" />
+          <span class="text-white text-sm"><b>No conversion</b> — each source shows its own currency; no combined net worth</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Queue currency</button>
+      </form>
+    </div>
+
+    <div class="mb-8">
+      <div class="text-white font-semibold mb-3">4. How money enters a source</div>
+      <form data-lavish-question="income" class="space-y-2"
+        onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('income'); if (c) window.lavish.queuePrompt('Income model: ' + c, { tag: 'choice', text: 'Income: ' + c, data: { question: 'income', answer: c } });">
+        <label class="flex items-start gap-3 p-3 rounded-xl app-sel cursor-pointer">
+          <input type="radio" name="income" value="Opening balance + income entries" class="mt-1" />
+          <span class="text-white text-sm"><b>Opening balance + income</b> — each source has a starting balance; separate "+ add money" (income) entries top it up. Recommended.</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="income" value="Opening balance only" class="mt-1" />
+          <span class="text-white text-sm"><b>Opening balance only</b> — balance only ever decreases as expenses are recorded</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="income" value="Track salary as income on Track" class="mt-1" />
+          <span class="text-white text-sm"><b>Income recorded in Track</b> — Track gains a negative-amount / income mode per source</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Queue income model</button>
+      </form>
+    </div>
+
+    <div class="mb-8">
+      <div class="text-white font-semibold mb-3">5. Source on expenses — scope</div>
+      <form data-lavish-question="source-scope" class="space-y-2"
+        onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('source-scope'); if (c) window.lavish.queuePrompt('Source scope on Track: ' + c, { tag: 'choice', text: 'Source scope: ' + c, data: { question: 'source-scope', answer: c } });">
+        <label class="flex items-start gap-3 p-3 rounded-xl app-sel cursor-pointer">
+          <input type="radio" name="source-scope" value="Per-day source" class="mt-1" />
+          <span class="text-white text-sm"><b>Per-day source</b> — one source selector per day sheet; all rows that day share it. Recommended.</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="source-scope" value="Per-row source" class="mt-1" />
+          <span class="text-white text-sm"><b>Per-row source</b> — each expense row has its own source selector</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="source-scope" value="Per-row but defaults to day" class="mt-1" />
+          <span class="text-white text-sm"><b>Per-row, defaults to day</b> — day-level default, overrideable per row</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Queue source scope</button>
+      </form>
+    </div>
+
+    <div>
+      <div class="text-white font-semibold mb-3">6. Net worth display</div>
+      <form data-lavish-question="networth" class="space-y-2"
+        onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('networth'); if (c) window.lavish.queuePrompt('Net worth display: ' + c, { tag: 'choice', text: 'Net worth: ' + c, data: { question: 'networth', answer: c } });">
+        <label class="flex items-start gap-3 p-3 rounded-xl app-sel cursor-pointer">
+          <input type="radio" name="networth" value="Total in JPY + per-source own currency" class="mt-1" />
+          <span class="text-white text-sm"><b>Total in JPY + per-source own currency</b> — header shows ¥ net worth, each card shows its own currency with ≈ JPY subtext. Recommended.</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="networth" value="Everything in JPY" class="mt-1" />
+          <span class="text-white text-sm"><b>Everything in JPY</b> — all cards convert to JPY</span>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer">
+          <input type="radio" name="networth" value="No combined total" class="mt-1" />
+          <span class="text-white text-sm"><b>No combined total</b> — just the list of sources</span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Queue net worth display</button>
+      </form>
+    </div>
+  </div>
+
+  <p class="text-sm app-sec text-center pb-8">Tip: annotate a mockup or card to adjust details. Use the forms above to lock a decision.</p>
+</div>
+
+</body>
+</html>

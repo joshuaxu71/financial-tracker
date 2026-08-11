@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html data-theme="luxury" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial App — Where do budgets live?</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :where(.grid, .flex) > * { min-width: 0; }
+    :where(p, h1, h2, h3, h4, h5, h6, li, td, th, .badge) { overflow-wrap: anywhere; }
+    .phone-screen {
+      background: #000; color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      overflow: hidden; height: 100%; display: flex; flex-direction: column; position: relative;
+    }
+    .phone-status { display: flex; justify-content: space-between; padding: 8px 16px 4px; font-size: 10px; font-weight: 600; color: #fff; }
+    .phone-tabs { display: flex; border-top: 1px solid #1e1e1e; padding: 6px 0 10px; background: #111; flex-shrink: 0; }
+    .phone-tab { flex: 1; text-align: center; font-size: 7.5px; color: #555; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .phone-tab.on { color: #fff; }
+    .tab-dot { width: 14px; height: 14px; background: currentColor; border-radius: 3px; opacity: 0.5; }
+    .phone-tab.on .tab-dot { opacity: 1; }
+    .dec-card { transition: outline 0.15s; }
+    .dec-card:has(input:checked) { outline: 2px solid var(--color-primary, #c9a227); outline-offset: 2px; }
+    .chip { font-size: 10px; padding: 3px 8px; border-radius: 999px; }
+  </style>
+</head>
+<body class="min-h-screen bg-base-200 p-4 md:p-8">
+
+  <div class="max-w-5xl mx-auto mb-6">
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-2">Confirmed budget model</h3>
+        <ul class="text-sm text-base-content/80 space-y-1">
+          <li><b>Placement:</b> budgets live per-category in the Categories page. The Budget tab becomes a read-only overview/dashboard.</li>
+          <li><b>Independent budgets:</b> groups and sub-categories each carry their own monthly budget number. No auto-summing of children.</li>
+          <li><b>Group ↔ leaves constraint:</b> if a group budget is set and <i>all</i> its leaves have budgets, the leaves must sum exactly to the group budget. If only some leaves are set, they may sum to less than the group — the remaining amount is a shared pool for the unset leaves; no per-leaf budget is written for them (it's just a total, never explicitly calculated or stored per leaf).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- ════ Option A: Separate Budget tab ════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="badge badge-soft badge-neutral badge-sm">A</span>
+          <span class="text-xs text-base-content/40">Keep as-is</span>
+        </div>
+        <h2 class="card-title text-lg mb-1">Separate Budget tab</h2>
+        <p class="text-xs text-base-content/55 mb-3">Categories page = pure category CRUD. Budgets = own tab. Zero overlap.</p>
+        <div class="mockup-phone mx-auto" style="transform:scale(0.92);transform-origin:top center;margin-bottom:-16px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:19px;font-weight:700;">Budget</span>
+                <span style="font-size:12px;color:#B0B4BA;font-weight:700;">+ Add</span>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:0 12px;">
+                <div style="background:#212225;border-radius:12px;padding:12px;text-align:center;margin-bottom:9px;">
+                  <div style="font-size:9px;color:#B0B4BA;">Aug 2026</div>
+                  <div style="font-size:20px;font-weight:700;">¥240,000</div>
+                  <div style="font-size:9px;color:#B0B4BA;">total spent</div>
+                </div>
+                <div style="background:#212225;border-radius:12px;padding:11px 12px;margin-bottom:9px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                    <span style="font-size:12px;font-weight:700;">Living</span>
+                    <span style="font-size:10px;color:#B0B4BA;">¥128k / ¥150k</span>
+                  </div>
+                  <div style="height:5px;background:#2E3135;border-radius:3px;margin:6px 0;overflow:hidden;">
+                    <div style="width:85%;height:100%;background:#FF6B6B;"></div>
+                  </div>
+                  <span style="font-size:9px;color:#B0B4BA;">85%</span>
+                </div>
+                <div style="background:#212225;border-radius:12px;padding:11px 12px;margin-bottom:9px;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                    <span style="font-size:12px;font-weight:700;">Personal</span>
+                    <span style="font-size:10px;color:#B0B4BA;">¥62k / ¥80k</span>
+                  </div>
+                  <div style="height:5px;background:#2E3135;border-radius:3px;margin:6px 0;overflow:hidden;">
+                    <div style="width:78%;height:100%;background:#4ECDC4;"></div>
+                  </div>
+                  <span style="font-size:9px;color:#B0B4BA;">78%</span>
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:4px;"></div>Track</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>History</div>
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="space-y-1 text-sm text-base-content/75 mt-4">
+          <li class="text-emerald-500">+ No rework — tab already exists</li>
+          <li class="text-emerald-500">+ One clear place for all budgets</li>
+          <li class="text-error/80">− Editing a category hides its budget</li>
+          <li class="text-error/80">− Two mental models: "manage" vs "money"</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ Option B: Budgets in Categories page ════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="badge badge-soft badge-primary badge-sm">B</span>
+          <span class="text-xs text-base-content/40">Recommended</span>
+        </div>
+        <h2 class="card-title text-lg mb-1">Budget per category, in Categories</h2>
+        <p class="text-xs text-base-content/55 mb-3">Each group/sub-category carries a monthly budget. Budget tab becomes an overview.</p>
+        <div class="mockup-phone mx-auto" style="transform:scale(0.92);transform-origin:top center;margin-bottom:-16px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div style="padding:8px 14px;display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-size:19px;font-weight:700;">Categories</span>
+                <div style="width:26px;height:26px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:15px;color:#000;line-height:1;">+</span>
+                </div>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:0 12px;">
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;padding:10px 12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#FF6B6B;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Living</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">¥128k/150k</span>
+                    <span style="font-size:11px;color:#B0B4BA;">▾</span>
+                  </div>
+                  <div style="height:4px;background:#2E3135;border-radius:2px;margin:6px 0 0;overflow:hidden;">
+                    <div style="width:85%;height:100%;background:#FF6B6B;"></div>
+                  </div>
+                </div>
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;padding:10px 12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#4ECDC4;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Personal</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">¥62k/80k</span>
+                    <span style="font-size:11px;color:#B0B4BA;">▸</span>
+                  </div>
+                </div>
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;padding:10px 12px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#45B7D1;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Holiday</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">¥0/50k</span>
+                    <span style="font-size:11px;color:#B0B4BA;">▸</span>
+                  </div>
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Track</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>History</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="space-y-1 text-sm text-base-content/75 mt-4">
+          <li class="text-emerald-500">+ Budget lives with the thing it caps</li>
+          <li class="text-emerald-500">+ Natural model: "Food → ¥50k/month"</li>
+          <li class="text-emerald-500">+ Budget tab = read-only dashboard</li>
+          <li class="text-error/80">− Rework of budget modal &amp; queries</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ Option C: Hybrid ════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="badge badge-soft badge-accent badge-sm">C</span>
+          <span class="text-xs text-base-content/40">Both</span>
+        </div>
+        <h2 class="card-title text-lg mb-1">Both pages</h2>
+        <p class="text-xs text-base-content/55 mb-3">Budgets editable from the Budget tab (today) AND from each category's editor. Two entry points to the same data.</p>
+        <div class="mockup-phone mx-auto" style="transform:scale(0.92);transform-origin:top center;margin-bottom:-16px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div style="flex:1;overflow:hidden;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;">
+                <div style="background:#212225;width:100%;border-radius:16px 16px 0 0;padding:10px 16px 20px;">
+                  <div style="width:32px;height:4px;background:#2E3135;border-radius:2px;margin:0 auto 12px;"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <span style="font-size:16px;font-weight:700;">Edit category</span>
+                    <span style="font-size:13px;color:#B0B4BA;">Cancel</span>
+                  </div>
+                  <div style="font-size:10px;color:#B0B4BA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Name</div>
+                  <div style="background:#2E3135;border-radius:8px;padding:8px 10px;font-size:13px;color:#fff;margin-bottom:10px;">Food</div>
+                  <div style="font-size:10px;color:#B0B4BA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Monthly budget</div>
+                  <div style="background:#2E3135;border-radius:8px;padding:8px 10px;font-size:13px;color:#fff;margin-bottom:4px;">¥50,000</div>
+                  <div style="font-size:10px;color:#B0B4BA;margin-bottom:14px;">spent ¥21,300 this month</div>
+                  <div style="background:#fff;color:#000;border-radius:10px;padding:10px;font-size:14px;font-weight:700;text-align:center;">Save</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="space-y-1 text-sm text-base-content/75 mt-4">
+          <li class="text-emerald-500">+ Set it wherever you happen to be</li>
+          <li class="text-error/80">− Two paths to the same data = drift risk</li>
+          <li class="text-error/80">− Most work; needs one source of truth</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Decision ── -->
+  <div class="max-w-5xl mx-auto mt-6 space-y-4">
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-3">Which placement do you want?</h3>
+        <form data-lavish-question="placement" onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('placement'); if (c) window.lavish.queuePrompt('Budget placement: ' + c, { tag: 'choice', text: 'Placement: ' + c, element: event.currentTarget, data: { question: 'placement', answer: c } });">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="placement" value="Keep separate Budget tab" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">A — Keep separate tab</div>
+              <p class="text-xs text-base-content/55 mt-1">Do nothing; budgets stay on the Budget tab as today.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="placement" value="Budgets in Categories page" class="checkbox checkbox-sm mb-2" checked />
+              <div class="font-semibold text-sm">B — In Categories page</div>
+              <p class="text-xs text-base-content/55 mt-1">Each category carries a monthly budget; Budget tab becomes the overview.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="placement" value="Budgets in both pages" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">C — Both</div>
+              <p class="text-xs text-base-content/55 mt-1">Editable from Budget tab and the category editor, sharing one source of truth.</p>
+            </div></label>
+          </div>
+          <div class="flex justify-end mt-3"><button class="btn btn-primary btn-sm" type="submit">Queue answer</button></div>
+        </form>
+        <div class="mt-4 pt-4 border-t border-base-content/10">
+          <h4 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-2">Group budget rollup — confirmed</h4>
+          <p class="text-xs text-base-content/60 mb-3"><b>Independent</b>, with a soft constraint on children:</p>
+          <div class="bg-base-200 rounded-lg p-3 text-xs text-base-content/75 space-y-1">
+            <p>▸ Each category (group or leaf) stores its own monthly budget. No auto-sum.</p>
+            <p>▸ If a group budget is set and <b>all</b> leaves are set → leaves must sum <b>exactly</b> to group.</p>
+            <p>▸ If a group budget is set and <b>only some</b> leaves are set → set leaves may sum to less than group; the remainder is a shared pool for unset leaves (never split out per leaf, never stored on them).</p>
+            <p>▸ No group budget set → leaves are free, no constraint.</p>
+            <p>▸ Budgets are <b>guides, not gates</b> — they never block recording an expense.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

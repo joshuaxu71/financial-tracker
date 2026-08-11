@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="luxury">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard design — History tab redesign</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :where(.grid, .flex, .layout-grid, .layout-flex) > *, :where([style*="display: grid"], [style*="display:grid"], [style*="display: flex"], [style*="display:flex"]) > * { min-width: 0; }
+  :where(p, h1, h2, h3, h4, h5, h6, li, dd, blockquote, figcaption, td, th, .badge, .label) { overflow-wrap: anywhere; }
+  :where(img, svg, video, canvas, iframe) { max-width: 100%; height: auto; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .app-bg { background: #000; }
+  .card-bg { background: #212225; }
+  .card-2 { background: #2E3135; }
+  .txt { color: #fff; }
+  .txt-2 { color: #B0B4BA; }
+  .btn-chip { border: 1px solid #2E3135; border-radius: 999px; padding: 6px 14px; font-size: 13px; color: #B0B4BA; background: transparent; }
+  .btn-chip.active { background: #fff; color: #000; font-weight: 600; }
+  .dot { width: 10px; height: 10px; border-radius: 999px; flex: none; }
+  .phone { width: 340px; border-radius: 44px; border: 8px solid #1a1a1b; overflow: hidden; background: #000; }
+  .mono { font-variant-numeric: tabular-nums; }
+  .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+</style>
+</head>
+<body class="min-h-screen" data-theme="luxury">
+
+<section class="max-w-6xl mx-auto px-6 py-10">
+  <div class="mb-2 tag text-base-content/50">HISTORY TAB REDESIGN</div>
+  <h1 class="text-3xl font-bold mb-2">Dashboard — see spending per month, per category</h1>
+  <p class="text-base-content/60 max-w-2xl mb-8">
+    The History tab becomes a read-only Dashboard. Track already shows the day-by-day journal, so this
+    screen shifts focus to <b>aggregates</b>: how much each category cost in a given month, and how it
+    trends over months. Pick the layout direction below.
+  </p>
+
+  <div class="grid md:grid-cols-3 gap-6 items-start">
+
+    <!-- Option A -->
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-primary badge-sm">A</span>
+        <h2 class="font-bold text-lg">Month overview</h2>
+      </div>
+      <p class="text-sm text-base-content/60 leading-snug">
+        Month-first. Total for the month, then a hierarchical category breakdown with
+        expand/collapse and progress vs budget. Scroll = navigate months. <b>Recommended.</b>
+      </p>
+      <div class="phone app-bg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="txt font-bold text-base">August 2026</span>
+            <span class="txt-2">▾</span>
+          </div>
+          <span class="btn-chip">Today</span>
+        </div>
+        <div class="flex gap-2 mb-4 overflow-hidden">
+          <span class="btn-chip active">All</span>
+          <span class="btn-chip">Living</span>
+          <span class="btn-chip">Personal</span>
+          <span class="btn-chip">Holiday</span>
+        </div>
+        <div class="card-bg rounded-2xl p-4 mb-3">
+          <div class="tag txt-2 mb-1">August total</div>
+          <div class="txt font-bold text-2xl mono">¥86,400</div>
+        </div>
+        <div class="card-bg rounded-2xl p-4 mb-2">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="dot" style="background:#FF6B6B"></span>
+              <span class="txt font-medium">Living</span>
+              <span class="txt-2">▾</span>
+            </div>
+            <span class="txt mono font-semibold">¥52,000</span>
+          </div>
+          <div class="flex items-center gap-2 mb-2">
+            <div class="h-1.5 rounded-full bg-[#2E3135] flex-1 overflow-hidden">
+              <div class="h-full rounded-full" style="width:87%; background:#FF6B6B"></div>
+            </div>
+            <span class="txt-2 text-xs mono">87%</span>
+          </div>
+          <div class="flex justify-between text-xs txt-2 py-1 pl-6">
+            <span class="flex items-center gap-1"><span class="dot" style="background:#FF6B6B"></span>House</span>
+            <span class="mono">¥24,000</span>
+          </div>
+          <div class="flex justify-between text-xs txt-2 py-1 pl-6">
+            <span class="flex items-center gap-1"><span class="dot" style="background:#FF6B6B"></span>Food</span>
+            <span class="mono">¥21,300</span>
+          </div>
+          <div class="flex justify-between text-xs txt-2 py-1 pl-6">
+            <span class="flex items-center gap-1"><span class="dot" style="background:#FF6B6B"></span>Needs</span>
+            <span class="mono">¥6,700</span>
+          </div>
+        </div>
+        <div class="card-bg rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="dot" style="background:#4ECDC4"></span>
+              <span class="txt font-medium">Personal</span>
+              <span class="txt-2">▸</span>
+            </div>
+            <span class="txt mono font-semibold">¥21,000</span>
+          </div>
+        </div>
+        <div class="card-bg rounded-2xl p-4 mt-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="dot" style="background:#45B7D1"></span>
+              <span class="txt font-medium">Holiday</span>
+              <span class="txt-2">▸</span>
+            </div>
+            <span class="txt mono font-semibold">¥13,400</span>
+          </div>
+        </div>
+      </div>
+      <label class="btn btn-primary btn-sm mt-1" onclick="pick('A')">Choose A</label>
+    </div>
+
+    <!-- Option B -->
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-secondary badge-sm">B</span>
+        <h2 class="font-bold text-lg">Category trends</h2>
+      </div>
+      <p class="text-sm text-base-content/60 leading-snug">
+        Category-first. Pick a group/sub-category and see its spending across the last
+        12 months as a bar chart. Good for spotting trends, weaker as a full-month summary.
+      </p>
+      <div class="phone app-bg p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="dot" style="background:#FF6B6B"></span>
+          <span class="txt font-bold text-base">Living</span>
+        </div>
+        <div class="flex gap-1.5 items-end mb-1 h-28">
+          <div class="flex-1 flex items-end gap-1">
+            <div class="w-1/2 rounded-t bg-[#FF6B6B]/40" style="height:12%"></div>
+          </div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/40" style="height:20%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/40" style="height:16%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/60" style="height:38%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/60" style="height:45%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/60" style="height:52%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]/80" style="height:66%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]" style="height:58%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]" style="height:74%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]" style="height:82%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]" style="height:91%"></div></div>
+          <div class="flex-1 flex items-end"><div class="w-1/2 rounded-t bg-[#FF6B6B]" style="height:100%"></div></div>
+        </div>
+        <div class="flex justify-between text-[10px] txt-2 mb-3">
+          <span>S</span><span>O</span><span>N</span><span>D</span><span>J</span><span>F</span>
+          <span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span class="txt font-semibold">A</span>
+        </div>
+        <div class="card-bg rounded-2xl p-4 mb-2">
+          <div class="flex items-center justify-between">
+            <span class="txt font-medium">Food</span>
+            <span class="txt mono">¥21,300</span>
+          </div>
+          <div class="flex justify-between text-xs txt-2 mt-1">
+            <span>12-mo avg ¥16,840</span>
+            <span class="text-[#FF6B6B]">+26%</span>
+          </div>
+        </div>
+        <div class="card-bg rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <span class="txt font-medium">House</span>
+            <span class="txt mono">¥24,000</span>
+          </div>
+          <div class="flex justify-between text-xs txt-2 mt-1">
+            <span>12-mo avg ¥22,150</span>
+            <span class="txt-2">+8%</span>
+          </div>
+        </div>
+      </div>
+      <label class="btn btn-outline btn-sm mt-1" onclick="pick('B')">Choose B</label>
+    </div>
+
+    <!-- Option C -->
+    <div class="flex flex-col gap-3">
+      <div class="flex items-center gap-2">
+        <span class="badge badge-accent badge-sm">C</span>
+        <h2 class="font-bold text-lg">Month × category matrix</h2>
+      </div>
+      <p class="text-sm text-base-content/60 leading-snug">
+        Rows = categories, columns = months. One glance at the whole picture, but cells are
+        cramped on a phone and needs horizontal scroll.
+      </p>
+      <div class="phone app-bg p-4">
+        <div class="flex items-center justify-between mb-3">
+          <span class="txt font-bold text-base">Dashboard</span>
+          <span class="btn-chip">6 mo</span>
+        </div>
+        <div class="card-bg rounded-2xl p-4 mb-3">
+          <div class="tag txt-2 mb-1">Total · last 6 months</div>
+          <div class="txt font-bold text-2xl mono">¥487,600</div>
+        </div>
+        <div class="overflow-hidden rounded-2xl">
+          <div class="flex bg-[#2E3135] rounded-t-xl px-3 py-2 text-[10px] txt-2">
+            <div class="w-24">Category</div>
+            <div class="flex-1 grid grid-cols-6 text-center">
+              <span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span class="txt">Aug</span>
+            </div>
+          </div>
+          <div class="flex items-center px-3 py-2 border-b border-[#2E3135]">
+            <div class="w-24 flex items-center gap-1.5"><span class="dot" style="background:#FF6B6B"></span><span class="txt text-xs">Living</span></div>
+            <div class="flex-1 grid grid-cols-6 text-center text-xs mono">
+              <span class="txt-2">—</span><span class="txt-2">44k</span><span class="txt-2">39k</span>
+              <span class="txt-2">58k</span><span class="txt-2">61k</span><span class="txt font-semibold">52k</span>
+            </div>
+          </div>
+          <div class="flex items-center px-3 py-2 border-b border-[#2E3135]">
+            <div class="w-24 flex items-center gap-1.5"><span class="dot" style="background:#4ECDC4"></span><span class="txt text-xs">Personal</span></div>
+            <div class="flex-1 grid grid-cols-6 text-center text-xs mono">
+              <span class="txt-2">18k</span><span class="txt-2">—</span><span class="txt-2">22k</span>
+              <span class="txt-2">19k</span><span class="txt-2">24k</span><span class="txt font-semibold">21k</span>
+            </div>
+          </div>
+          <div class="flex items-center px-3 py-2 border-b border-[#2E3135]">
+            <div class="w-24 flex items-center gap-1.5"><span class="dot" style="background:#45B7D1"></span><span class="txt text-xs">Holiday</span></div>
+            <div class="flex-1 grid grid-cols-6 text-center text-xs mono">
+              <span class="txt-2">—</span><span class="txt-2">—</span><span class="txt-2">—</span>
+              <span class="txt-2">9k</span><span class="txt-2">31k</span><span class="txt font-semibold">13k</span>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs txt-2 mt-3 leading-snug">Dense on a phone — months need abbreviating and the table scrolls horizontally.</p>
+      </div>
+      <label class="btn btn-outline btn-sm mt-1" onclick="pick('C')">Choose C</label>
+    </div>
+
+  </div>
+
+  <div class="mt-10 max-w-2xl">
+    <h3 class="font-semibold mb-2">Open questions</h3>
+    <ul class="text-sm text-base-content/60 space-y-1.5 list-disc pl-5">
+      <li>Does the dashboard need budget comparison at all, or just raw spend? (Mockups show progress bars only in A.)</li>
+      <li>Should "Today" / month navigation feel like Track (scroll = next month, pill to jump back)?</li>
+      <li>Do you still need the per-expense delete long-press somewhere, or is Track the only place to manage entries?</li>
+      <li>Month scope: 1 month at a time, or rolling (e.g. last 3/6 months) with a month picker?</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+  function pick(option) {
+    window.parent.postMessage({ type: 'lavish-queue', prompts: [`Dashboard direction: ${option}`] }, '*');
+  }
+</script>
+</body>
+</html>

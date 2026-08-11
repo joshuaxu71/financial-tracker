@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html data-theme="luxury" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial App — Category Management</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :where(.grid, .flex) > * { min-width: 0; }
+    :where(p, h1, h2, h3, h4, h5, h6, li, td, th, .badge) { overflow-wrap: anywhere; }
+    .phone-screen {
+      background: #000; color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      overflow: hidden; height: 100%; display: flex; flex-direction: column; position: relative;
+    }
+    .phone-status { display: flex; justify-content: space-between; padding: 8px 16px 4px; font-size: 10px; font-weight: 600; color: #fff; }
+    .phone-tabs { display: flex; border-top: 1px solid #1e1e1e; padding: 6px 0 10px; background: #111; flex-shrink: 0; }
+    .phone-tab { flex: 1; text-align: center; font-size: 7.5px; color: #555; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .phone-tab.on { color: #fff; }
+    .tab-dot { width: 14px; height: 14px; background: currentColor; border-radius: 3px; opacity: 0.5; }
+    .phone-tab.on .tab-dot { opacity: 1; }
+    .dec-card { transition: outline 0.15s; }
+    .dec-card:has(input:checked) { outline: 2px solid var(--color-primary, #c9a227); outline-offset: 2px; }
+  </style>
+</head>
+<body class="min-h-screen bg-base-200 p-4 md:p-8">
+
+  <div class="max-w-5xl mx-auto mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-base-content">Category Management</h1>
+        <p class="text-sm text-base-content/60 mt-1">Create, rename, recolor, and delete groups &amp; sub-categories. Annotate anything or answer the decisions below.</p>
+      </div>
+      <span class="badge badge-soft badge-warning">Design review</span>
+    </div>
+  </div>
+
+  <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- ════ Phone 1: list ════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="badge badge-soft badge-primary badge-sm">1</span>
+          <span class="text-xs text-base-content/40">Categories list</span>
+        </div>
+        <h2 class="card-title text-lg mb-2">Groups &amp; sub-categories</h2>
+        <div class="mockup-phone mx-auto" style="transform:scale(0.9);transform-origin:top center;margin-bottom:-18px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 10px;">
+                <span style="font-size:20px;font-weight:700;">Categories</span>
+                <div style="width:28px;height:28px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:16px;color:#000;line-height:1;">+</span>
+                </div>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:0 12px;">
+
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#FF6B6B;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Living</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">$1,240</span>
+                    <span style="font-size:12px;color:#B0B4BA;">▾</span>
+                  </div>
+                  <div style="border-top:1px solid #2E3135;padding:2px 12px;">
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2E3135;">
+                      <div style="width:7px;height:7px;border-radius:50%;background:#FF6B6B;flex-shrink:0;"></div>
+                      <span style="flex:1;font-size:12px;">House</span>
+                      <span style="font-size:9px;color:#B0B4BA;">edit</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2E3135;">
+                      <div style="width:7px;height:7px;border-radius:50%;background:#FF6B6B;flex-shrink:0;"></div>
+                      <span style="flex:1;font-size:12px;">Food</span>
+                      <span style="font-size:9px;color:#B0B4BA;">edit</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+                      <div style="width:7px;height:7px;border-radius:50%;background:#FF6B6B;flex-shrink:0;"></div>
+                      <span style="flex:1;font-size:12px;">Needs</span>
+                      <span style="font-size:9px;color:#B0B4BA;">edit</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;overflow:hidden;">
+                  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#4ECDC4;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Personal</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">$620</span>
+                    <span style="font-size:12px;color:#B0B4BA;">▾</span>
+                  </div>
+                  <div style="border-top:1px solid #2E3135;padding:2px 12px;">
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #2E3135;">
+                      <div style="width:7px;height:7px;border-radius:50%;background:#4ECDC4;flex-shrink:0;"></div>
+                      <span style="flex:1;font-size:12px;">Transportation</span>
+                      <span style="font-size:9px;color:#B0B4BA;">edit</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
+                      <div style="width:7px;height:7px;border-radius:50%;background:#4ECDC4;flex-shrink:0;"></div>
+                      <span style="flex:1;font-size:12px;">Miscellaneous</span>
+                      <span style="font-size:9px;color:#B0B4BA;">edit</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background:#212225;border-radius:12px;margin-bottom:9px;">
+                  <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;">
+                    <div style="width:10px;height:10px;border-radius:5px;background:#45B7D1;flex-shrink:0;"></div>
+                    <span style="flex:1;font-size:13px;font-weight:600;">Holiday</span>
+                    <span style="font-size:10px;color:#B0B4BA;font-weight:600;">$0</span>
+                    <span style="font-size:12px;color:#B0B4BA;">▸</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:12px;border:1px dashed #2E3135;border-radius:12px;">
+                  <span style="font-size:13px;color:#B0B4BA;">+ New category</span>
+                </div>
+              </div>
+              <div class="phone-tabs">
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Track</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>History</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="space-y-1 text-sm text-base-content/75 mt-4">
+          <li>→ Group cards show a color dot, live monthly total, chevron to expand</li>
+          <li>→ Sub-categories nest any depth; each can carry its own color (or inherit ancestor's)</li>
+          <li>→ Tap <span class="text-base-content/40">edit</span> or long-press to open the editor</li>
+          <li>→ "+ New category" opens a sheet to pick parent + name + color</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ════ Phone 2: editor sheet ════ -->
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center justify-between mb-1">
+          <span class="badge badge-soft badge-secondary badge-sm">2</span>
+          <span class="text-xs text-base-content/40">Create / edit sheet</span>
+        </div>
+        <h2 class="card-title text-lg mb-2">Name, parent, color</h2>
+        <div class="mockup-phone mx-auto" style="transform:scale(0.9);transform-origin:top center;margin-bottom:-18px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+              <div style="flex:1;overflow:hidden;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;">
+                <div style="background:#212225;width:100%;border-radius:16px 16px 0 0;padding:10px 16px 20px;">
+                  <div style="width:32px;height:4px;background:#2E3135;border-radius:2px;margin:0 auto 12px;"></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                    <span style="font-size:16px;font-weight:700;">New category</span>
+                    <span style="font-size:13px;color:#B0B4BA;">Cancel</span>
+                  </div>
+
+                  <div style="font-size:10px;color:#B0B4BA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Parent</div>
+                  <div style="background:#2E3135;border-radius:8px;padding:8px 10px;font-size:13px;color:#fff;margin-bottom:5px;">Living ▾</div>
+                  <div style="font-size:10px;color:#B0B4BA;margin-bottom:12px;">None = top-level group · self-referencing parent_id = any depth</div>
+
+                  <div style="font-size:10px;color:#B0B4BA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Name</div>
+                  <div style="background:#2E3135;border-radius:8px;padding:8px 10px;font-size:13px;color:#fff;margin-bottom:12px;">Travel</div>
+
+                  <div style="font-size:10px;color:#B0B4BA;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Color</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+                    <div style="width:26px;height:26px;border-radius:13px;background:#FF6B6B;border:2px solid #fff;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#4ECDC4;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#45B7D1;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#FFD93D;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#6BCB77;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#FF9F45;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#C780FA;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#FF6FA5;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#4A90D9;"></div>
+                    <div style="width:26px;height:26px;border-radius:13px;background:#8B9DC3;"></div>
+                  </div>
+
+                  <div style="background:#fff;color:#000;border-radius:10px;padding:10px;font-size:14px;font-weight:700;text-align:center;">Save</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <ul class="space-y-1 text-sm text-base-content/75 mt-4">
+          <li>→ Group = new color bucket (shows in filter chips + timeline dots)</li>
+          <li>→ Sub-category = belongs to a chosen parent via self-referencing <span class="font-mono text-xs">parent_id</span> — any depth works</li>
+          <li>→ 10 preset swatches; tap a swatch to select (white ring = selected)</li>
+          <li>→ Editing an existing item also shows Delete + usage count</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Decisions ── -->
+  <div class="max-w-5xl mx-auto mt-6 space-y-4">
+
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-3">1 · Where does the page live?</h3>
+        <form data-lavish-question="entry" onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('entry'); if (c) window.lavish.queuePrompt('Entry point: ' + c, { tag: 'choice', text: 'Entry: ' + c, element: event.currentTarget, data: { question: 'entry', answer: c } });">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="entry" value="Gear icon in Track header" class="checkbox checkbox-sm mb-2" checked />
+              <div class="font-semibold text-sm">Gear icon in Track header</div>
+              <p class="text-xs text-base-content/55 mt-1">A small ⚙ in the Day Journal header opens Categories. Least clutter, reachable from where you log.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="entry" value="New tab in tab bar" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">New tab</div>
+              <p class="text-xs text-base-content/55 mt-1">4th tab "Categories". Always visible, but tab bar gets crowded.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="entry" value="From category filter/picker" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">From filter / picker</div>
+              <p class="text-xs text-base-content/55 mt-1">An "Edit" entry inside the Day Journal category chips and inline picker. Discoverable at point of use.</p>
+            </div></label>
+          </div>
+          <div class="flex justify-end mt-3"><button class="btn btn-primary btn-sm" type="submit">Queue answer</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-3">2 · Sub-category colors</h3>
+        <form data-lavish-question="subcolor" onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('subcolor'); if (c) window.lavish.queuePrompt('Sub-category color rule: ' + c, { tag: 'choice', text: 'Sub-color: ' + c, element: event.currentTarget, data: { question: 'subcolor', answer: c } });">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="subcolor" value="Inherit group color" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">Inherit group color</div>
+              <p class="text-xs text-base-content/55 mt-1">House/Food/Needs all show Living's red. Timelines stay calm; the sheet only shows a color for groups.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="subcolor" value="Own color per sub-category" class="checkbox checkbox-sm mb-2" checked />
+              <div class="font-semibold text-sm">Own color per sub-category</div>
+              <p class="text-xs text-base-content/55 mt-1">Each sub-category picks its own swatch; a child without a color falls back to its nearest ancestor's color.</p>
+            </div></label>
+          </div>
+          <div class="flex justify-end mt-3"><button class="btn btn-primary btn-sm" type="submit">Queue answer</button></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-3">3 · Deleting a category in use</h3>
+        <form data-lavish-question="delete" onsubmit="event.preventDefault(); const c = new FormData(event.currentTarget).get('delete'); if (c) window.lavish.queuePrompt('Delete behavior: ' + c, { tag: 'choice', text: 'Delete: ' + c, element: event.currentTarget, data: { question: 'delete', answer: c } });">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="delete" value="Block delete when used, show count" class="checkbox checkbox-sm mb-2" />
+              <div class="font-semibold text-sm">Block if used</div>
+              <p class="text-xs text-base-content/55 mt-1">If expenses reference it, show "12 expenses use this" and refuse. Prevents orphaned data.</p>
+            </div></label>
+            <label class="dec-card card card-border bg-base-100 cursor-pointer"><div class="card-body p-4">
+              <input type="radio" name="delete" value="Delete and reassign expenses to another category" class="checkbox checkbox-sm mb-2" checked />
+              <div class="font-semibold text-sm">Reassign then delete</div>
+              <p class="text-xs text-base-content/55 mt-1">Prompt to move affected expenses into another category, then delete. More work to build.</p>
+            </div></label>
+          </div>
+          <div class="flex justify-end mt-3"><button class="btn btn-primary btn-sm" type="submit">Queue answer</button></div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

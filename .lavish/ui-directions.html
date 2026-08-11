@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html data-theme="luxury" lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Financial App — UI/UX Direction Review</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/daisyui.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@5.5.19/themes.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.2.4/dist/index.global.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :where(.grid, .flex) > * { min-width: 0; }
+    :where(p, h1, h2, h3, h4, h5, h6, li, td, th, .badge) { overflow-wrap: anywhere; }
+
+    /* Phone screen internals */
+    .phone-screen {
+      background: #0a0a0a;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .phone-status {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 16px 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .phone-tabs {
+      display: flex;
+      border-top: 1px solid #1e1e1e;
+      padding: 6px 0 10px;
+      background: #111;
+      flex-shrink: 0;
+    }
+    .phone-tab {
+      flex: 1;
+      text-align: center;
+      font-size: 7.5px;
+      color: #555;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+    .phone-tab.on { color: #fff; }
+    .tab-dot {
+      width: 14px;
+      height: 14px;
+      background: currentColor;
+      border-radius: 3px;
+      opacity: 0.5;
+    }
+    .phone-tab.on .tab-dot { opacity: 1; }
+
+    /* Selected card ring */
+    .opt-card { transition: outline 0.15s; }
+    .opt-card.picked { outline: 2px solid var(--color-primary, #c9a227); outline-offset: 2px; }
+  </style>
+</head>
+<body class="min-h-screen bg-base-200 p-4 md:p-8">
+
+  <!-- ── Header ── -->
+  <div class="max-w-5xl mx-auto mb-6">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-base-content">UI/UX Direction Review</h1>
+        <p class="text-sm text-base-content/60 mt-1">Three redesigns for expense tracking. Annotate or select your direction.</p>
+      </div>
+      <span class="badge badge-soft badge-warning">Current: raw spreadsheet grid</span>
+    </div>
+    <div role="alert" class="alert alert-outline alert-warning mt-4 text-sm">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span><strong>Current pain:</strong> Date arrows + scrollable category pills + plain spreadsheet grid — no spending context, no visual hierarchy, no delight.</span>
+    </div>
+  </div>
+
+  <!-- ── Cards ── -->
+  <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- ════ A: Quick Capture ════ -->
+    <div class="opt-card card card-border bg-base-100" id="card-a">
+      <div class="card-body p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="badge badge-soft badge-primary badge-sm">A</span>
+            <span class="text-xs text-base-content/40">Lowest effort</span>
+          </div>
+          <h2 class="card-title text-lg">Quick Capture</h2>
+          <p class="text-sm text-base-content/60">Summary home + bottom-sheet entry. Focus purely on speed.</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="mockup-phone mx-auto" style="transform:scale(0.88);transform-origin:top center;margin-bottom:-24px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+
+              <div style="flex:1;overflow:hidden;padding:10px 14px 0;">
+                <div style="font-size:10px;color:#555;letter-spacing:1px;text-transform:uppercase;">Saturday</div>
+                <div style="font-size:22px;font-weight:700;margin-bottom:12px;">August 2</div>
+
+                <!-- Today card -->
+                <div style="background:#181818;border-radius:12px;padding:12px;margin-bottom:10px;">
+                  <div style="font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Today</div>
+                  <div style="font-size:24px;font-weight:700;margin-bottom:5px;">$24.50</div>
+                  <div style="height:4px;background:#222;border-radius:2px;overflow:hidden;margin-bottom:4px;">
+                    <div style="width:31%;height:100%;background:linear-gradient(90deg,#E8735A,#B87DCC);border-radius:2px;"></div>
+                  </div>
+                  <div style="font-size:7.5px;color:#555;">31% of $80 daily budget</div>
+                </div>
+
+                <!-- Recent -->
+                <div style="font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Recent</div>
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1a;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#E8735A;flex-shrink:0;"></div>
+                  <div style="flex:1;font-size:8.5px;">Lunch</div>
+                  <div style="font-size:8.5px;font-weight:600;">$12.00</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1a;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#E8735A;flex-shrink:0;"></div>
+                  <div style="flex:1;font-size:8.5px;">Coffee</div>
+                  <div style="font-size:8.5px;font-weight:600;">$4.00</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#5CBF8A;flex-shrink:0;"></div>
+                  <div style="flex:1;font-size:8.5px;">Shampoo</div>
+                  <div style="font-size:8.5px;font-weight:600;">$8.50</div>
+                </div>
+              </div>
+
+              <!-- FAB -->
+              <div style="position:absolute;right:14px;bottom:52px;width:34px;height:34px;border-radius:17px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.6);">
+                <span style="font-size:18px;color:#000;line-height:1;">+</span>
+              </div>
+
+              <!-- Bottom sheet (partial reveal) -->
+              <div style="position:absolute;bottom:42px;left:0;right:0;background:#1c1c1e;border-radius:14px 14px 0 0;padding:10px 14px 0;border-top:1px solid #2e2e2e;">
+                <div style="width:30px;height:3px;background:#3a3a3a;border-radius:2px;margin:0 auto 9px;"></div>
+                <div style="display:flex;gap:5px;margin-bottom:8px;overflow:hidden;">
+                  <div style="background:#E8735A;color:#fff;border-radius:10px;padding:2px 7px;font-size:7.5px;font-weight:600;">Food</div>
+                  <div style="background:#252525;color:#666;border-radius:10px;padding:2px 7px;font-size:7.5px;">House</div>
+                  <div style="background:#252525;color:#666;border-radius:10px;padding:2px 7px;font-size:7.5px;">Needs</div>
+                </div>
+                <div style="font-size:26px;font-weight:700;text-align:center;padding:2px 0 6px;letter-spacing:-1px;">$0<span style="color:#444">.00</span></div>
+                <div style="background:#252525;border-radius:7px;padding:5px 9px;font-size:8.5px;color:#555;margin-bottom:7px;">description (optional)</div>
+                <div style="font-size:7.5px;color:#666;text-align:center;padding-bottom:3px;">+ Add another item</div>
+              </div>
+
+              <div class="phone-tabs">
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Track</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>History</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-2">How it works</div>
+          <ul class="space-y-1 text-sm text-base-content/75">
+            <li>→ FAB opens bottom sheet, numpad immediate focus on amount</li>
+            <li>→ Category chip at top; Enter advances rows inside the sheet</li>
+            <li>→ "Save X items" closes sheet and bulk-commits</li>
+            <li>→ Mixed-category batches require multiple sheet opens</li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div><div class="font-semibold text-success mb-1">Wins</div>
+            <ul class="space-y-1 text-base-content/65"><li>+ Fastest in/out</li><li>+ Amount is the hero</li><li>+ Spending context on home</li><li>+ Minimal new code</li></ul>
+          </div>
+          <div><div class="font-semibold text-error mb-1">Costs</div>
+            <ul class="space-y-1 text-base-content/65"><li>− One category per sheet open</li><li>− Bottom sheet is cramped for many rows</li><li>− No history on home</li></ul>
+          </div>
+        </div>
+
+        <div class="card-actions mt-auto pt-1">
+          <button class="btn btn-outline btn-primary btn-sm w-full sel-btn" data-opt="a" data-label="Quick Capture">Choose Quick Capture</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ B: Day Journal ════ -->
+    <div class="opt-card card card-border bg-base-100" id="card-b">
+      <div class="card-body p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="badge badge-soft badge-secondary badge-sm">B</span>
+            <span class="text-xs text-base-content/40">Medium effort</span>
+          </div>
+          <h2 class="card-title text-lg">Day Journal</h2>
+          <p class="text-sm text-base-content/60">Timeline-first. Browse and enter in one unified view — no mode switch.</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="mockup-phone mx-auto" style="transform:scale(0.88);transform-origin:top center;margin-bottom:-24px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+
+              <div style="flex:1;overflow:hidden;">
+                <!-- Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px;">
+                  <span style="font-size:17px;font-weight:700;">August 2026</span>
+                  <div style="width:26px;height:26px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:14px;color:#000;line-height:1;">+</span>
+                  </div>
+                </div>
+
+                <!-- Week strip -->
+                <div style="display:flex;padding:0 12px 7px;gap:1px;">
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">M<br><span style="font-size:8px;">28</span></div>
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">T<br><span style="font-size:8px;">29</span></div>
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">W<br><span style="font-size:8px;">30</span></div>
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">T<br><span style="font-size:8px;">31</span></div>
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">F<br><span style="font-size:8px;">1</span></div>
+                  <div style="flex:1;text-align:center;font-size:7.5px;color:#444;padding:3px 0;">S<br><span style="font-size:8px;">2</span></div>
+                  <div style="flex:1;text-align:center;">
+                    <div style="width:22px;height:22px;border-radius:11px;background:#fff;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:9px;color:#000;font-weight:700;">2</div>
+                    <div style="font-size:6px;color:#888;margin-top:1px;">today</div>
+                  </div>
+                </div>
+
+                <div style="height:1px;background:#1a1a1a;"></div>
+
+                <!-- TODAY -->
+                <div style="padding:9px 14px 0;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                    <span style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Today</span>
+                    <span style="font-size:10px;color:#888;font-weight:600;">$24.50</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #181818;">
+                    <div style="width:5px;height:5px;border-radius:50%;background:#E8735A;flex-shrink:0;"></div>
+                    <div style="flex:1;font-size:8px;">Lunch</div><div style="font-size:8px;color:#ccc;">$12.00</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #181818;">
+                    <div style="width:5px;height:5px;border-radius:50%;background:#E8735A;flex-shrink:0;"></div>
+                    <div style="flex:1;font-size:8px;">Coffee</div><div style="font-size:8px;color:#ccc;">$4.00</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid #222;">
+                    <div style="width:5px;height:5px;border-radius:50%;background:#5CBF8A;flex-shrink:0;"></div>
+                    <div style="flex:1;font-size:8px;">Shampoo</div><div style="font-size:8px;color:#ccc;">$8.50</div>
+                  </div>
+
+                  <!-- Inline entry form -->
+                  <div style="background:#1c1c1e;border-radius:8px;margin-top:5px;padding:7px;border:1px solid #2e2e2e;">
+                    <div style="font-size:7px;color:#666;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Add to today</div>
+                    <div style="display:flex;gap:3px;margin-bottom:5px;overflow:hidden;">
+                      <div style="background:#E8735A;color:#fff;border-radius:7px;padding:2px 6px;font-size:6.5px;font-weight:600;">Food</div>
+                      <div style="background:#252525;color:#666;border-radius:7px;padding:2px 6px;font-size:6.5px;">House</div>
+                      <div style="background:#252525;color:#666;border-radius:7px;padding:2px 6px;font-size:6.5px;">Needs</div>
+                    </div>
+                    <div style="display:flex;gap:3px;align-items:center;">
+                      <div style="background:#252525;border-radius:5px;padding:3px 5px;font-size:8px;color:#777;width:44px;text-align:right;">$0.00</div>
+                      <div style="background:#252525;border-radius:5px;padding:3px 5px;font-size:8px;color:#444;flex:1;">description</div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;margin-top:5px;">
+                      <div style="background:#fff;color:#000;border-radius:5px;padding:2px 7px;font-size:7.5px;font-weight:600;">Save</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- YESTERDAY -->
+                <div style="padding:8px 14px 0;">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                    <span style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;">Yesterday</span>
+                    <span style="font-size:9px;color:#444;font-weight:600;">$67.20</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:7px;padding:3px 0;">
+                    <div style="width:5px;height:5px;border-radius:50%;background:#B87DCC;flex-shrink:0;"></div>
+                    <div style="flex:1;font-size:8px;color:#666;">Uber</div><div style="font-size:8px;color:#555;">$18.00</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="phone-tabs">
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Journal</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>Stats</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-2">How it works</div>
+          <ul class="space-y-1 text-sm text-base-content/75">
+            <li>→ Tap "+" or the area below any day's list to expand inline entry</li>
+            <li>→ Entry lives inside the timeline — zero mode switching</li>
+            <li>→ Per-row category selection (unlike A's per-sheet)</li>
+            <li>→ Save collapses the form and updates the day's total inline</li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div><div class="font-semibold text-success mb-1">Wins</div>
+            <ul class="space-y-1 text-base-content/65"><li>+ No mode switch — natural</li><li>+ History + entry same screen</li><li>+ Multi-category per batch</li><li>+ Scales to catching up past days</li></ul>
+          </div>
+          <div><div class="font-semibold text-error mb-1">Costs</div>
+            <ul class="space-y-1 text-base-content/65"><li>− Inline form is cramped</li><li>− Week strip adds nav complexity</li><li>− Entry is less focused</li></ul>
+          </div>
+        </div>
+
+        <div class="card-actions mt-auto pt-1">
+          <button class="btn btn-outline btn-secondary btn-sm w-full sel-btn" data-opt="b" data-label="Day Journal">Choose Day Journal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ C: Spending Dashboard ════ -->
+    <div class="opt-card card card-border bg-base-100" id="card-c">
+      <div class="card-body p-5 gap-4">
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="badge badge-soft badge-accent badge-sm">C</span>
+            <span class="text-xs text-base-content/40">Most effort</span>
+          </div>
+          <h2 class="card-title text-lg">Spending Dashboard</h2>
+          <p class="text-sm text-base-content/60">Data-first home. Always know where you stand before logging.</p>
+        </div>
+
+        <!-- Phone -->
+        <div class="mockup-phone mx-auto" style="transform:scale(0.88);transform-origin:top center;margin-bottom:-24px;">
+          <div class="mockup-phone-camera"></div>
+          <div class="mockup-phone-display">
+            <div class="phone-screen">
+              <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+
+              <div style="flex:1;overflow:hidden;padding:0 14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0 9px;">
+                  <div>
+                    <div style="font-size:9px;color:#555;">August 2026</div>
+                    <div style="font-size:17px;font-weight:700;">Overview</div>
+                  </div>
+                  <div style="width:28px;height:28px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:16px;color:#000;line-height:1;">+</span>
+                  </div>
+                </div>
+
+                <!-- Budget ring card -->
+                <div style="background:#181818;border-radius:12px;padding:11px;margin-bottom:9px;display:flex;align-items:center;gap:11px;">
+                  <svg width="48" height="48" viewBox="0 0 48 48" style="flex-shrink:0;">
+                    <circle cx="24" cy="24" r="18" fill="none" stroke="#252525" stroke-width="5"/>
+                    <circle cx="24" cy="24" r="18" fill="none" stroke="#E8735A" stroke-width="5"
+                            stroke-dasharray="47 113" stroke-linecap="round"
+                            transform="rotate(-90 24 24)"/>
+                    <circle cx="24" cy="24" r="18" fill="none" stroke="#4A90D9" stroke-width="5"
+                            stroke-dasharray="34 113" stroke-linecap="round"
+                            transform="rotate(59 24 24)"/>
+                    <circle cx="24" cy="24" r="18" fill="none" stroke="#5CBF8A" stroke-width="5"
+                            stroke-dasharray="18 113" stroke-linecap="round"
+                            transform="rotate(157 24 24)"/>
+                  </svg>
+                  <div>
+                    <div style="font-size:7.5px;color:#555;margin-bottom:2px;">Monthly spent</div>
+                    <div style="font-size:19px;font-weight:700;line-height:1.1;">$420</div>
+                    <div style="font-size:7.5px;color:#555;">of $800 budget</div>
+                  </div>
+                  <div style="margin-left:auto;text-align:right;">
+                    <div style="font-size:9px;color:#5CBF8A;font-weight:700;">52%</div>
+                    <div style="font-size:7px;color:#555;">used</div>
+                  </div>
+                </div>
+
+                <!-- Category bars -->
+                <div style="font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">By category</div>
+                <div style="margin-bottom:4px;">
+                  <div style="display:flex;justify-content:space-between;font-size:7.5px;margin-bottom:2px;"><span style="color:#E8735A;">Food</span><span style="color:#666;">$180 / $250</span></div>
+                  <div style="height:3px;background:#1e1e1e;border-radius:2px;"><div style="width:72%;height:100%;background:#E8735A;border-radius:2px;"></div></div>
+                </div>
+                <div style="margin-bottom:4px;">
+                  <div style="display:flex;justify-content:space-between;font-size:7.5px;margin-bottom:2px;"><span style="color:#4A90D9;">House</span><span style="color:#666;">$140 / $300</span></div>
+                  <div style="height:3px;background:#1e1e1e;border-radius:2px;"><div style="width:47%;height:100%;background:#4A90D9;border-radius:2px;"></div></div>
+                </div>
+                <div style="margin-bottom:8px;">
+                  <div style="display:flex;justify-content:space-between;font-size:7.5px;margin-bottom:2px;"><span style="color:#5CBF8A;">Needs</span><span style="color:#666;">$60 / $150</span></div>
+                  <div style="height:3px;background:#1e1e1e;border-radius:2px;"><div style="width:40%;height:100%;background:#5CBF8A;border-radius:2px;"></div></div>
+                </div>
+
+                <!-- Recent -->
+                <div style="font-size:8px;color:#555;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;">Recent</div>
+                <div style="display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid #1a1a1a;">
+                  <div style="width:22px;height:22px;border-radius:11px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:#E8735A;"></div>
+                  </div>
+                  <div style="flex:1;"><div style="font-size:8.5px;">Lunch</div><div style="font-size:7px;color:#555;">Today · Food</div></div>
+                  <div style="font-size:8.5px;font-weight:600;">$12.00</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;padding:5px 0;">
+                  <div style="width:22px;height:22px;border-radius:11px;background:#1e1e1e;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="width:7px;height:7px;border-radius:50%;background:#B87DCC;"></div>
+                  </div>
+                  <div style="flex:1;"><div style="font-size:8.5px;">Uber</div><div style="font-size:7px;color:#555;">Yesterday · Transport</div></div>
+                  <div style="font-size:8.5px;font-weight:600;">$18.00</div>
+                </div>
+              </div>
+
+              <div class="phone-tabs">
+                <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Overview</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>History</div>
+                <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-2">How it works</div>
+          <ul class="space-y-1 text-sm text-base-content/75">
+            <li>→ "+" opens a full-height modal with the existing spreadsheet grid</li>
+            <li>→ Dashboard (ring + bars + recent) live-updates after each save</li>
+            <li>→ Tap a category bar to drill down to that category's history</li>
+            <li>→ Requires budgets to be meaningful — empty state is weaker</li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div><div class="font-semibold text-success mb-1">Wins</div>
+            <ul class="space-y-1 text-base-content/65"><li>+ Richest UX, most "finance app"</li><li>+ Budget awareness upfront</li><li>+ Reuses existing budget data</li><li>+ Spreadsheet grid unchanged</li></ul>
+          </div>
+          <div><div class="font-semibold text-error mb-1">Costs</div>
+            <ul class="space-y-1 text-base-content/65"><li>− Most dev work (charts, ring)</li><li>− Weak empty state if no budgets</li><li>− Entry is still secondary</li></ul>
+          </div>
+        </div>
+
+        <div class="card-actions mt-auto pt-1">
+          <button class="btn btn-outline btn-accent btn-sm w-full sel-btn" data-opt="c" data-label="Spending Dashboard">Choose Spending Dashboard</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Comparison table ── -->
+  <div class="max-w-5xl mx-auto mt-6">
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <h3 class="text-xs font-semibold text-base-content/40 uppercase tracking-wide mb-3">At a glance</h3>
+        <div class="overflow-x-auto">
+          <table class="table table-sm table-zebra">
+            <thead>
+              <tr>
+                <th class="text-base-content/40 font-medium">Criterion</th>
+                <th class="text-primary font-semibold">A · Quick Capture</th>
+                <th class="text-secondary font-semibold">B · Day Journal</th>
+                <th class="text-accent font-semibold">C · Dashboard</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-base-content/60">Dev effort</td>
+                <td><span class="badge badge-soft badge-success badge-xs">Low</span></td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Medium</span></td>
+                <td><span class="badge badge-soft badge-error badge-xs">High</span></td>
+              </tr>
+              <tr>
+                <td class="text-base-content/60">Entry speed</td>
+                <td><span class="badge badge-soft badge-success badge-xs">Fastest</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">Fast</span></td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Same as current</span></td>
+              </tr>
+              <tr>
+                <td class="text-base-content/60">Spending awareness</td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Today only</span></td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Weekly view</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">Full monthly</span></td>
+              </tr>
+              <tr>
+                <td class="text-base-content/60">Multi-category batch</td>
+                <td><span class="badge badge-soft badge-error badge-xs">Multiple opens</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">Per-row</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">Per-row</span></td>
+              </tr>
+              <tr>
+                <td class="text-base-content/60">History on home</td>
+                <td><span class="badge badge-soft badge-error badge-xs">No</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">Yes — inline</span></td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Recent only</span></td>
+              </tr>
+              <tr>
+                <td class="text-base-content/60">Requires budgets set</td>
+                <td><span class="badge badge-soft badge-success badge-xs">No</span></td>
+                <td><span class="badge badge-soft badge-success badge-xs">No</span></td>
+                <td><span class="badge badge-soft badge-warning badge-xs">Strongly recommended</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Day Journal Deep Dive ── -->
+  <div class="max-w-5xl mx-auto mt-6">
+    <div class="card card-border bg-base-100">
+      <div class="card-body p-5">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="badge badge-soft badge-secondary badge-sm">B selected</span>
+          <h3 class="text-base font-bold text-base-content">Day Journal — Design Decisions</h3>
+        </div>
+        <p class="text-sm text-base-content/55 mb-5">Addressing your four open questions with concrete proposals.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+          <!-- Q1: Date strip vs infinite scroll -->
+          <div class="card card-border bg-base-200">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start gap-2">
+                <span class="badge badge-soft badge-warning badge-xs mt-0.5">Q1</span>
+                <p class="text-sm font-semibold text-base-content">Week strip + infinite scroll — confusing?</p>
+              </div>
+              <p class="text-xs text-base-content/65">Yes — two navigation systems for the same axis creates confusion. The week strip implies "tap a day to go there" while the scroll already does that. <strong>Drop the week strip.</strong></p>
+              <div class="divider my-0 text-xs text-base-content/30">Proposal</div>
+              <ul class="text-xs text-base-content/75 space-y-1">
+                <li>→ <strong>Month label</strong> ("August 2026") at top — tap it to open a compact month/year picker modal for long jumps</li>
+                <li>→ <strong>Scroll = primary nav.</strong> No week strip needed.</li>
+                <li>→ Today floats to the top on first load; scrolling up reveals older days</li>
+                <li>→ A "Today" pill appears when you've scrolled far enough to lose today from view</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q2: Category grouping -->
+          <div class="card card-border bg-base-200">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start gap-2">
+                <span class="badge badge-soft badge-warning badge-xs mt-0.5">Q2</span>
+                <p class="text-sm font-semibold text-base-content">Hierarchical categories — how to handle?</p>
+              </div>
+              <p class="text-xs text-base-content/65">Self-referential <code class="bg-base-300 px-1 rounded text-xs">categories.parent_id</code> — no separate table. A category with <code class="bg-base-300 px-1 rounded text-xs">parent_id = NULL</code> is a group; one with a <code class="bg-base-300 px-1 rounded text-xs">parent_id</code> set is a leaf. Timeline colors by parent (group); sub-category is the detail label.</p>
+              <div class="divider my-0 text-xs text-base-content/30">Proposal</div>
+              <ul class="text-xs text-base-content/75 space-y-1">
+                <li>→ <strong>Entry form:</strong> pick parent group first (chips), then child categories expand below</li>
+                <li>→ <strong>Timeline dots</strong> use parent's color; label shows child category name</li>
+                <li>→ <strong>Filter chips</strong> (Q4) filter by parent OR child — two levels</li>
+                <li>→ DB: add <code class="bg-base-300 px-1 rounded text-xs">parent_id</code> + <code class="bg-base-300 px-1 rounded text-xs">color</code> to existing <code class="bg-base-300 px-1 rounded text-xs">categories</code> table — no schema additions</li>
+              </ul>
+              <div class="flex flex-wrap gap-1 mt-1">
+                <span class="badge badge-soft badge-xs" style="background:#1a2a1a;color:#5CBF8A;">Living Expenses</span>
+                <span class="badge badge-soft badge-xs" style="background:#1a1a2a;color:#4A90D9;">Personal</span>
+                <span class="badge badge-soft badge-xs" style="background:#2a1a2a;color:#B87DCC;">Big Purchases</span>
+                <span class="badge badge-soft badge-xs" style="background:#2a2218;color:#F0B429;">Holiday</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q3: Insert/reorder -->
+          <div class="card card-border bg-base-200">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start gap-2">
+                <span class="badge badge-soft badge-warning badge-xs mt-0.5">Q3</span>
+                <p class="text-sm font-semibold text-base-content">Insert between entries + custom ordering</p>
+              </div>
+              <p class="text-xs text-base-content/65"><code class="bg-base-300 px-1 rounded text-xs">created_at</code> is for auditing only. Add a <code class="bg-base-300 px-1 rounded text-xs">sort_order: real</code> column (fractional indexing — insert between 1 and 2 by using 1.5).</p>
+              <div class="divider my-0 text-xs text-base-content/30">Proposal</div>
+              <ul class="text-xs text-base-content/75 space-y-1">
+                <li>→ <strong>Drag handle (⠿)</strong> on left of each row — long-press to drag within a day</li>
+                <li>→ <strong>Insert affordance:</strong> tap the gap between two rows → inline entry form opens between them</li>
+                <li>→ <strong>Sort resets</strong> when you drag: recalculate <code class="bg-base-300 px-1 rounded text-xs">sort_order</code> for affected rows only</li>
+                <li>→ Spreadsheet grid entry already appends; reorder is a post-save action in the journal view</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Q4: Filter + month picker -->
+          <div class="card card-border bg-base-200">
+            <div class="card-body p-4 gap-3">
+              <div class="flex items-start gap-2">
+                <span class="badge badge-soft badge-warning badge-xs mt-0.5">Q4</span>
+                <p class="text-sm font-semibold text-base-content">Category filter + replace week strip with month picker</p>
+              </div>
+              <p class="text-xs text-base-content/65">Your instinct is right. A month picker + category filter chips use the top bar well without the week strip redundancy.</p>
+              <div class="divider my-0 text-xs text-base-content/30">Proposal</div>
+              <ul class="text-xs text-base-content/75 space-y-1">
+                <li>→ <strong>Row 1:</strong> "August 2026 ▾" (tap = month picker) + scroll position indicator</li>
+                <li>→ <strong>Row 2:</strong> horizontal filter chips — [All] [Living] [Personal] [Holiday] + sub-category expansion on tap</li>
+                <li>→ Filter chips are sticky below the month header while scrolling</li>
+                <li>→ Filtering hides non-matching expense rows but keeps day headers visible (shows filtered total)</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Refined B mockup -->
+        <div class="divider mt-4 mb-4 text-sm text-base-content/40">Refined B mockup with all four addressed</div>
+        <div class="flex justify-center">
+          <div class="mockup-phone" style="transform:scale(0.9);transform-origin:top center;margin-bottom:-32px;">
+            <div class="mockup-phone-camera"></div>
+            <div class="mockup-phone-display">
+              <div class="phone-screen">
+                <div class="phone-status"><span>9:41</span><span>●●●</span></div>
+
+                <!-- Month header row -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 14px 5px;">
+                  <div style="display:flex;align-items:center;gap:5px;">
+                    <span style="font-size:16px;font-weight:700;">August 2026</span>
+                    <span style="font-size:9px;color:#555;">▾</span>
+                  </div>
+                  <div style="width:26px;height:26px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;">
+                    <span style="font-size:14px;color:#000;line-height:1;">+</span>
+                  </div>
+                </div>
+
+                <!-- Category filter chips (sticky) -->
+                <div style="display:flex;gap:5px;padding:0 12px 7px;overflow:hidden;border-bottom:1px solid #1a1a1a;">
+                  <div style="background:#fff;color:#000;border-radius:10px;padding:2px 8px;font-size:7px;font-weight:700;flex-shrink:0;">All</div>
+                  <div style="background:#1a2a1a;color:#5CBF8A;border-radius:10px;padding:2px 7px;font-size:7px;flex-shrink:0;">Living</div>
+                  <div style="background:#1a1a2a;color:#4A90D9;border-radius:10px;padding:2px 7px;font-size:7px;flex-shrink:0;">Personal</div>
+                  <div style="background:#2a2218;color:#F0B429;border-radius:10px;padding:2px 7px;font-size:7px;flex-shrink:0;">Holiday</div>
+                </div>
+
+                <!-- Timeline -->
+                <div style="flex:1;overflow:hidden;padding:8px 14px 0;">
+
+                  <!-- TODAY -->
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+                    <span style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Today</span>
+                    <span style="font-size:9.5px;color:#888;font-weight:600;">$24.50</span>
+                  </div>
+
+                  <!-- Entry rows with drag handles -->
+                  <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #181818;">
+                    <span style="font-size:8px;color:#333;flex-shrink:0;">⠿</span>
+                    <div style="width:5px;height:5px;border-radius:50%;background:#5CBF8A;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="font-size:8px;">Lunch</div>
+                      <div style="font-size:6.5px;color:#555;">Food · Living</div>
+                    </div>
+                    <div style="font-size:8px;color:#ccc;">$12.00</div>
+                  </div>
+                  <!-- Insert affordance (between rows) -->
+                  <div style="display:flex;align-items:center;gap:4px;padding:1px 0;">
+                    <div style="flex:1;height:1px;background:#1e1e1e;"></div>
+                    <div style="font-size:7px;color:#2a2a2a;padding:0 3px;">+ insert</div>
+                    <div style="flex:1;height:1px;background:#1e1e1e;"></div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #181818;">
+                    <span style="font-size:8px;color:#333;flex-shrink:0;">⠿</span>
+                    <div style="width:5px;height:5px;border-radius:50%;background:#5CBF8A;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="font-size:8px;">Coffee</div>
+                      <div style="font-size:6.5px;color:#555;">Food · Living</div>
+                    </div>
+                    <div style="font-size:8px;color:#ccc;">$4.00</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #222;">
+                    <span style="font-size:8px;color:#333;flex-shrink:0;">⠿</span>
+                    <div style="width:5px;height:5px;border-radius:50%;background:#5CBF8A;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                      <div style="font-size:8px;">Shampoo</div>
+                      <div style="font-size:6.5px;color:#555;">Needs · Living</div>
+                    </div>
+                    <div style="font-size:8px;color:#ccc;">$8.50</div>
+                  </div>
+
+                  <!-- Inline entry (two-level cat picker) -->
+                  <div style="background:#1c1c1e;border-radius:7px;margin-top:5px;padding:7px;border:1px solid #2a2a2a;">
+                    <div style="font-size:6.5px;color:#555;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px;">Add to today</div>
+                    <!-- Group level -->
+                    <div style="font-size:6.5px;color:#666;margin-bottom:3px;">Group</div>
+                    <div style="display:flex;gap:3px;margin-bottom:5px;overflow:hidden;">
+                      <div style="background:#1a2a1a;color:#5CBF8A;border-radius:7px;padding:2px 6px;font-size:6.5px;font-weight:600;border:1px solid #5CBF8A;">Living</div>
+                      <div style="background:#222;color:#555;border-radius:7px;padding:2px 6px;font-size:6.5px;">Personal</div>
+                      <div style="background:#222;color:#555;border-radius:7px;padding:2px 6px;font-size:6.5px;">Holiday</div>
+                    </div>
+                    <!-- Sub-category level -->
+                    <div style="font-size:6.5px;color:#666;margin-bottom:3px;">Category</div>
+                    <div style="display:flex;gap:3px;margin-bottom:5px;overflow:hidden;">
+                      <div style="background:#E8735A;color:#fff;border-radius:7px;padding:2px 6px;font-size:6.5px;font-weight:600;">Food</div>
+                      <div style="background:#222;color:#555;border-radius:7px;padding:2px 6px;font-size:6.5px;">House</div>
+                      <div style="background:#222;color:#555;border-radius:7px;padding:2px 6px;font-size:6.5px;">Needs</div>
+                    </div>
+                    <!-- Amount + desc -->
+                    <div style="display:flex;gap:3px;">
+                      <div style="background:#252525;border-radius:5px;padding:3px 5px;font-size:8px;color:#777;width:44px;text-align:right;">$0.00</div>
+                      <div style="background:#252525;border-radius:5px;padding:3px 5px;font-size:8px;color:#444;flex:1;">description</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-top:4px;align-items:center;">
+                      <span style="font-size:6.5px;color:#444;">+ add row</span>
+                      <div style="background:#fff;color:#000;border-radius:5px;padding:2px 7px;font-size:7px;font-weight:600;">Save</div>
+                    </div>
+                  </div>
+
+                  <!-- YESTERDAY (faded) -->
+                  <div style="margin-top:8px;opacity:0.5;">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                      <span style="font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#555;">Yesterday</span>
+                      <span style="font-size:9px;color:#444;">$67.20</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;padding:3px 0;">
+                      <span style="font-size:8px;color:#222;flex-shrink:0;">⠿</span>
+                      <div style="width:5px;height:5px;border-radius:50%;background:#4A90D9;flex-shrink:0;"></div>
+                      <div style="flex:1;font-size:8px;color:#666;">Uber</div>
+                      <div style="font-size:8px;color:#444;">$18.00</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="phone-tabs">
+                  <div class="phone-tab on"><div class="tab-dot" style="border-radius:4px;"></div>Journal</div>
+                  <div class="phone-tab"><div class="tab-dot" style="border-radius:8px;"></div>Stats</div>
+                  <div class="phone-tab"><div class="tab-dot" style="border-radius:2px;"></div>Budget</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Callouts below mockup -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+          <div class="text-center p-3 bg-base-200 rounded-lg">
+            <div class="text-lg mb-1">📅</div>
+            <div class="text-xs font-semibold text-base-content/80">Month picker</div>
+            <div class="text-xs text-base-content/50 mt-1">Tap header for long jumps; scroll for daily nav</div>
+          </div>
+          <div class="text-center p-3 bg-base-200 rounded-lg">
+            <div class="text-lg mb-1">🏷️</div>
+            <div class="text-xs font-semibold text-base-content/80">Group → Category</div>
+            <div class="text-xs text-base-content/50 mt-1">Two-step picker; group color on dot</div>
+          </div>
+          <div class="text-center p-3 bg-base-200 rounded-lg">
+            <div class="text-lg mb-1">⠿</div>
+            <div class="text-xs font-semibold text-base-content/80">Drag to reorder</div>
+            <div class="text-xs text-base-content/50 mt-1">sort_order field; insert between rows</div>
+          </div>
+          <div class="text-center p-3 bg-base-200 rounded-lg">
+            <div class="text-lg mb-1">⚡</div>
+            <div class="text-xs font-semibold text-base-content/80">Sticky filter chips</div>
+            <div class="text-xs text-base-content/50 mt-1">Filter by group or sub-category</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Toast ── -->
+  <div id="sel-toast" class="toast toast-end" style="display:none;z-index:999;">
+    <div class="alert alert-success shadow-lg">
+      <span id="sel-msg" class="text-sm"></span>
+    </div>
+  </div>
+
+  <script>
+    const colors = { a: 'btn-primary', b: 'btn-secondary', c: 'btn-accent' };
+    const labels = { a: 'Quick Capture', b: 'Day Journal', c: 'Spending Dashboard' };
+
+    document.querySelectorAll('.sel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const opt = btn.dataset.opt;
+
+        // Highlight card
+        document.querySelectorAll('.opt-card').forEach(c => c.classList.remove('picked'));
+        document.getElementById('card-' + opt).classList.add('picked');
+
+        // Reset all buttons
+        document.querySelectorAll('.sel-btn').forEach(b => {
+          const o = b.dataset.opt;
+          b.className = `btn btn-outline ${colors[o]} btn-sm w-full sel-btn`;
+          b.textContent = 'Choose ' + labels[o];
+        });
+
+        // Mark selected
+        btn.classList.remove('btn-outline');
+        btn.textContent = '✓ ' + labels[opt] + ' selected';
+
+        // Toast
+        document.getElementById('sel-msg').textContent = `Direction ${opt.toUpperCase()}: ${labels[opt]} selected`;
+        const t = document.getElementById('sel-toast');
+        t.style.display = 'block';
+        clearTimeout(t._tid);
+        t._tid = setTimeout(() => { t.style.display = 'none'; }, 3000);
+      });
+    });
+  </script>
+</body>
+</html>
